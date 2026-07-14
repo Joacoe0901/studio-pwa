@@ -1,0 +1,245 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { apiFetch, getAccessToken } from "@/lib/api";
+import CalendarSlider, {
+  generateCalendarDays,
+  todayStr,
+  type CalendarDay,
+} from "@/components/CalendarSlider";
+import ClassCard from "@/components/ClassCard";
+import ConfirmationModal from "@/components/ConfirmationModal";
+
+/* ─── Types ─────────────────────────────────────────────────────────────────── */
+
+interface ClientBookableSession {
+  id: number;
+  serviceName: string;
+  serviceId: number;
+  instructor: string;
+  startDateTime: string;
+  endDateTime: string;
+  maxCapacity: number;
+  enrolledCount: number;
+  waitlistCount: number;
+  enrolled: boolean;
+  enrollmentId: number | null;
+  color: string;
+}
+
+interface StudioBranding {
+  studioName: string;
+  primaryColor: string;
+  calendarDays: string;
+}
+
+/* ─── Helpers ───────────────────────────────────────────────────────────────── */
+
+function isPast(endDateTime: string): boolean {
+  return new Date(endDateTime) < new Date();
+}
+
+function isOutsideBookingWindow(startDateTime: string): boolean {
+  const maxDate = new Date();
+  maxDate.setDate(maxDate.getDate() + 7);
+  maxDate.setHours(23, 59, 59, 999);
+  return new Date(startDateTime) > maxDate;
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function cancelTone(outcome: string): "danger" | "warning" | "info" {
+  if (outcome === "RECOVER") return "info";
+  if (outcome === "CONSUME_NO_RECOVERY") return "warning";
+  return "danger"; // CONSUME_LATE
+}
+
+/* ─── Component ─────────────────────────────────────────────────────────────── */
+
+export default function ReservarPage() {
+  const router = useRouter();
+
+  const [branding, setBranding] = useState<StudioBranding | null>(null);
+  const [sessions, setSessions] = useState<ClientBookableSession[]>([]);
+  const [days, setDays] = useState<CalendarDay[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr());
+  const [loading, setLoading] = useState(true);
+  const [reserving, setReserving] = useState<number | null>(null);
+  const [cancelling, setCancelling] = useState<number | null>(null);
+  const [confirmReserve, setConfirmReserve] = useState<ClientBookableSession | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState<ClientBookableSession | null>(null);
+  const [cancelPreview, setCancelPreview] = useState<{ message: string; tone: "danger" | "warning" | "info" } | null>(null);
+  const [errorModal, setErrorModal] = useState<{ session: ClientBookableSession; message: string } | null>(null);
+  const [message, setMessage] = useState("");
+
+  /* Auth guard */
+  useEffect(() => {
+    if (!getAccessToken()) {
+      router.replace("/login");
+    }
+  }, [router]);
+
+  /* Load branding */
+  useEffect(() => {
+    const loadBranding = async () => {
+      try {
+        const data = await apiFetch<StudioBranding>("/client/company");
+        setBranding(data);
+        setDays(generateCalendarDays(data.calendarDays));
+      } catch {
+        setBranding({ studioName: "", primaryColor: "#4A7C59", calendarDays: "MON_FRI" });
+        setDays(generateCalendarDays("MON_FRI"));
+      }
+    };
+    loadBranding();
+  }, []);
+
+  /* Load sessions — from the Monday of the current week so past days are included */
+  const loadSessions = useCallback(async () => {
+    try {
+      // Compute Monday of this week as the earliest visible day in the slider
+      const now = new Date();
+      const dow = now.getDay(); // 0=Sun
+      const mondayOffset = dow === 0 ? -6 : 1 - dow;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + mondayOffset);
+      const from = monday.toISOString().slice(0, 10);
+      const to = addDays(from, 14);
+      const data = await apiFetch<ClientBookableSession[]>(`/client/sessions?from=${from}&to=${to}`);
+      setSessions(data);
+    } catch { /* handled by guard */ }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (!getAccessToken()) return;
+    loadSessions();
+  }, [loadSessions]);
+
+  /* Filter sessions by date */
+  const filteredSessions = sessions.filter((s) => s.startDateTime.startsWith(selectedDate));
+
+  /* Reserve */
+  const handleReserveClick = (session: ClientBookableSession) => {
+    setMessage("");
+    setConfirmReserve(session);
+  };
+
+  const handleConfirmReserve = async () => {
+    if (!confirmReserve) return;
+    const session = confirmReserve;
+    setReserving(session.id);
+    try {
+      await apiFetch("/client/reservations", { method: "POST", body: JSON.stringify({ sessionId: session.id }) });
+      setMessage("Reserva realizada con exito!");
+      setConfirmReserve(null);
+      await loadSessions();
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : "";
+      if (code === "VOUCHER_LIMIT_REACHED") {
+        setConfirmReserve(null);
+        setErrorModal({
+          session,
+          message: "No tienes clases disponibles en tu bono para reservar esta clase.",
+        });
+      } else {
+        setMessage(code || "Error al reservar");
+      }
+    }
+    setReserving(null);
+  };
+
+  /* Cancel */
+  const handleCancelClick = async (session: ClientBookableSession) => {
+    setMessage("");
+    setConfirmCancel(session);
+    setCancelPreview(null);
+    if (!session.enrollmentId) return;
+    try {
+      const p = await apiFetch<{ outcome: string; message: string }>(
+        `/client/reservations/${session.enrollmentId}/cancel-preview`,
+      );
+      setCancelPreview({ message: p.message, tone: cancelTone(p.outcome) });
+    } catch {
+      /* keep default modal text if the preview fails */
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!confirmCancel || !confirmCancel.enrollmentId) return;
+    setCancelling(confirmCancel.id);
+    try {
+      await apiFetch(`/client/reservations/${confirmCancel.enrollmentId}`, { method: "DELETE" });
+      setMessage("Reserva cancelada.");
+      setConfirmCancel(null);
+      await loadSessions();
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? err.message : "Error al cancelar");
+    }
+    setCancelling(null);
+  };
+
+  /* Derived */
+  const primaryColor = branding?.primaryColor ?? "#4A7C59";
+  const studioName = branding?.studioName ?? "";
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col">
+      <header className="flex-shrink-0 px-4 pt-10 pb-3 flex items-center gap-3" style={{ backgroundColor: primaryColor }}>
+        <button onClick={() => router.back()} className="p-1 text-white/80 hover:text-white transition-colors">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+        <h1 className="text-lg font-bold text-white">Reservas</h1>
+      </header>
+      <CalendarSlider days={days} selectedDate={selectedDate} onSelect={(date) => { setSelectedDate(date); setMessage(""); }} primaryColor={primaryColor} />
+      {message && (
+        <div className="mx-4 mt-3 p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700 animate-fade-in">{message}</div>
+      )}
+      <main className="flex-1 px-4 pb-10 pt-3 space-y-2 overflow-y-auto">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mb-3" style={{ borderColor: `${primaryColor}40`, borderTopColor: primaryColor }} />
+            <p className="text-gray-400 text-sm">Cargando clases...</p>
+          </div>
+        ) : filteredSessions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+            </svg>
+            <p className="text-gray-400 text-sm">No hay clases disponibles para este dia.</p>
+          </div>
+        ) : (
+          filteredSessions.map((s) => (
+            <ClassCard key={s.id} session={s} isPast={isPast(s.endDateTime)} isOutsideWindow={isOutsideBookingWindow(s.startDateTime)} onReserve={handleReserveClick} onCancel={handleCancelClick} loading={reserving === s.id || cancelling === s.id} studioName={studioName} />
+          ))
+        )}
+      </main>
+      {confirmReserve && (
+        <ConfirmationModal type="reserve" session={confirmReserve} onConfirm={handleConfirmReserve} onClose={() => { setConfirmReserve(null); setMessage(""); }} loading={reserving === confirmReserve.id} primaryColor={primaryColor} />
+      )}
+      {confirmCancel && (
+        <ConfirmationModal type="cancel" session={confirmCancel} message={cancelPreview?.message} tone={cancelPreview?.tone} onConfirm={handleConfirmCancel} onClose={() => { setConfirmCancel(null); setCancelPreview(null); setMessage(""); }} loading={cancelling === confirmCancel.id} primaryColor={primaryColor} />
+      )}
+      {errorModal && (
+        <ConfirmationModal
+          type="error"
+          session={errorModal.session}
+          title="No hay clases disponibles"
+          message={errorModal.message}
+          onClose={() => setErrorModal(null)}
+          primaryColor={primaryColor}
+        />
+      )}
+    </div>
+  );
+}
