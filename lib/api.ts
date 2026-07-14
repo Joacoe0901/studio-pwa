@@ -157,6 +157,27 @@ export async function pendingOfflineCount(): Promise<number> {
 // ─── Auth helpers ─────────────────────────────────────────────────────────────
 
 /**
+ * Check whether a customer with the given email exists in the database.
+ * Calls the public endpoint POST /client/check-customer.
+ * Returns true if the email belongs to an active customer.
+ */
+export async function checkCustomerEmail(email: string): Promise<boolean> {
+  const res = await fetch(`${API_URL}/client/check-customer`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.error || "Error al verificar el email. Intenta de nuevo.");
+  }
+
+  const data = await res.json();
+  return data.exists === true;
+}
+
+/**
  * Request the login code be sent to the customer's email.
  * Calls the public endpoint POST /client/request-code with the email.
  * The backend always returns 200 with a generic message to avoid

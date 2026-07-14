@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { loginWithCode, requestCodeByEmail } from "@/lib/api";
+import { loginWithCode, requestCodeByEmail, checkCustomerEmail } from "@/lib/api";
 
 const CODE_LENGTH = 6;
 
@@ -44,12 +44,25 @@ export default function LoginPage() {
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const canGoNext = isValidEmail && acceptedTerms;
 
-  // ── Step 1: Email → Next ─────────────────────────────────────────────────
+  // ── Step 1: Email → Validate → Next ────────────────────────────────────────
   async function handleEmailNext(e: React.FormEvent) {
     e.preventDefault();
     if (!canGoNext) return;
     setError("");
-    setStep("options");
+    setLoading(true);
+
+    try {
+      const exists = await checkCustomerEmail(email);
+      if (!exists) {
+        setError("Correo no registrado. Contacta con el estudio para registrarte.");
+        return;
+      }
+      setStep("options");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al verificar el email.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   // ── Step 2: Request code by email ────────────────────────────────────────
@@ -159,13 +172,13 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={!canGoNext}
+            disabled={!canGoNext || loading}
             className="w-full py-4 rounded-xl text-white font-semibold text-lg
               bg-brand-500 hover:bg-brand-600 active:bg-brand-700
               disabled:opacity-40 disabled:cursor-not-allowed
               transition-colors duration-150"
           >
-            Siguiente
+            {loading ? "Verificando..." : "Siguiente"}
           </button>
         </form>
       )}
