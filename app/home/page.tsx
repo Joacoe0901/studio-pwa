@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, clearToken, getAccessToken, resolveUploadUrl } from "@/lib/api";
+import { getCachedBranding, setCachedBranding, type CachedBranding } from "@/lib/branding";
 import NotificationsBottomSheet from "@/components/NotificationsBottomSheet";
 import NotificationDetailModal from "@/components/NotificationDetailModal";
 
@@ -97,13 +98,8 @@ const hamburgerItems = [
 export default function HomePage() {
   const router = useRouter();
 
-  const [branding, setBranding] = useState<StudioBranding>({
-    studioName: "Andes Pilates",
-    primaryColor: "#3B82F6",
-    secondaryColor: "#8B5CF6",
-    backgroundImageUrl: "",
-    logoUrl: "",
-  });
+  const cached = getCachedBranding();
+  const [branding, setBranding] = useState<StudioBranding>(cached);
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -144,7 +140,10 @@ export default function HomePage() {
     }
 
     apiFetch<StudioBranding>("/client/company")
-      .then((data) => setBranding(data))
+      .then((data) => {
+        setBranding(data);
+        setCachedBranding(data);
+      })
       .catch(() => { });
 
     apiFetch<ClientProfile>("/client/me")

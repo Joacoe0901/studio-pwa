@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, getAccessToken } from "@/lib/api";
+import { getCachedBranding, setCachedBranding } from "@/lib/branding";
 import CalendarSlider, {
   generateCalendarDays,
   todayStr,
@@ -67,7 +68,12 @@ function cancelTone(outcome: string): "danger" | "warning" | "info" {
 export default function ReservarPage() {
   const router = useRouter();
 
-  const [branding, setBranding] = useState<StudioBranding | null>(null);
+  const cached = getCachedBranding();
+  const [branding, setBranding] = useState<StudioBranding>({
+    studioName: cached.studioName,
+    primaryColor: cached.primaryColor,
+    calendarDays: "MON_FRI",
+  });
   const [sessions, setSessions] = useState<ClientBookableSession[]>([]);
   const [days, setDays] = useState<CalendarDay[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(todayStr());
@@ -91,11 +97,12 @@ export default function ReservarPage() {
   useEffect(() => {
     const loadBranding = async () => {
       try {
-        const data = await apiFetch<StudioBranding>("/client/company");
+        const data = await apiFetch<StudioBranding & { secondaryColor?: string; backgroundImageUrl?: string; logoUrl?: string }>("/client/company");
         setBranding(data);
         setDays(generateCalendarDays(data.calendarDays));
+        setCachedBranding(data);
       } catch {
-        setBranding({ studioName: "", primaryColor: "#4A7C59", calendarDays: "MON_FRI" });
+        setBranding({ studioName: cached.studioName, primaryColor: cached.primaryColor, calendarDays: "MON_FRI" });
         setDays(generateCalendarDays("MON_FRI"));
       }
     };
