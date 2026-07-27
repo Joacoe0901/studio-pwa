@@ -186,7 +186,6 @@ export default function PerfilPage() {
                                 ref={fileInputRef}
                                 type="file"
                                 accept="image/*"
-                                capture="environment"
                                 onChange={handleUploadPhoto}
                                 className="hidden"
                             />
