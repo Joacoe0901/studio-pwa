@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { loginWithCode, requestCodeByEmail, checkCustomerEmail } from "@/lib/api";
+import { loginWithCode, requestCodeByEmail, checkCustomerEmail, getAccessToken } from "@/lib/api";
 
 const CODE_LENGTH = 6;
 
@@ -11,6 +11,13 @@ type Step = "email" | "options" | "code";
 
 export default function LoginPage() {
   const router = useRouter();
+
+  // If already logged in, go straight to home.
+  useEffect(() => {
+    if (getAccessToken()) {
+      router.replace("/home");
+    }
+  }, [router]);
 
   // ── Shared state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>("email");

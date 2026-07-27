@@ -1,6 +1,19 @@
-import { redirect } from "next/navigation";
+"use client";
 
-// Root redirects to login; auth guard added in Sprint 1.
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getAccessToken } from "@/lib/api";
+
 export default function RootPage() {
-  redirect("/login");
+  const router = useRouter();
+
+  useEffect(() => {
+    if (getAccessToken()) {
+      router.replace("/home");
+    } else {
+      router.replace("/login");
+    }
+  }, [router]);
+
+  return null;
 }
