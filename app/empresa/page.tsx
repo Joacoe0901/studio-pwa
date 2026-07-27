@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, resolveUploadUrl } from "@/lib/api";
 
 interface StudioInfo {
     studioName: string;
@@ -15,17 +15,20 @@ interface StudioInfo {
     instagram: string;
     facebook: string;
     primaryColor: string;
+    logoUrl: string;
 }
 
 export default function EmpresaPage() {
     const router = useRouter();
     const [info, setInfo] = useState<StudioInfo | null>(null);
+    const [error, setError] = useState<string | null>(null);
     const primaryColor = info?.primaryColor || "#4A7C59";
+    const logoUrl = info?.logoUrl ? resolveUploadUrl(info.logoUrl) : null;
 
     useEffect(() => {
-        apiFetch<StudioInfo>("/settings")
+        apiFetch<StudioInfo>("/client/company")
             .then(setInfo)
-            .catch(() => { });
+            .catch((err) => setError(err?.message || "Error al cargar los datos"));
     }, []);
 
     return (
@@ -38,12 +41,25 @@ export default function EmpresaPage() {
                 </button>
                 <h1 className="text-lg font-bold text-white">Empresa</h1>
             </header>
-            <main className="flex-1 min-h-0 px-4 pb-10 pt-4 flex flex-col overflow-y-auto">
-                {!info ? (
+            <main className="flex-1 min-h-0 px-4 pb-16 pt-4 flex flex-col overflow-y-auto">
+                {error ? (
+                    <p className="text-red-500 text-sm text-center py-8">{error}</p>
+                ) : !info ? (
                     <p className="text-gray-400 text-sm">Cargando...</p>
                 ) : (
                     <>
                     <div className="space-y-6 flex-1">
+                        {/* Logo del estudio */}
+                        {logoUrl && (
+                            <div className="flex justify-center pt-2">
+                                <img
+                                    src={logoUrl}
+                                    alt={info.studioName}
+                                    className="w-28 h-28 object-contain rounded-xl"
+                                />
+                            </div>
+                        )}
+
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900">{info.studioName}</h2>
                             {info.description && (
@@ -108,7 +124,8 @@ export default function EmpresaPage() {
                         )}
                     </div>
 
-                    <div className="flex justify-center gap-6 pt-6">
+                    {/* Redes sociales — con suficiente espacio inferior */}
+                    <div className="flex justify-center gap-6 pt-8 pb-6">
                         {info.instagram && (
                             <a
                                 href={`https://instagram.com/${info.instagram.replace("@", "")}`}
