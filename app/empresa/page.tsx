@@ -46,6 +46,15 @@ export default function EmpresaPage() {
                     <p className="text-red-500 text-sm text-center py-8">{error}</p>
                 ) : !info ? (
                     <p className="text-gray-400 text-sm">Cargando...</p>
+                ) : !info.studioName && !info.address && !info.phone && !info.email ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center space-y-3 py-16">
+                        <span className="text-4xl">🏢</span>
+                        <p className="text-gray-500 text-sm font-medium">Sin datos de la empresa</p>
+                        <p className="text-gray-400 text-xs max-w-xs">
+                            El estudio aún no ha configurado sus datos de contacto.
+                            Vuelve a intentarlo más tarde.
+                        </p>
+                    </div>
                 ) : (
                     <>
                     <div className="space-y-6 flex-1">
