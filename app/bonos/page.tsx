@@ -17,7 +17,10 @@ interface Voucher {
     recoveriesMax?: number;
     expirationDate: string;
     status: string;
+    periodMonth: number;
 }
+
+const MONTHS = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 function VoucherProgress({ consumed, upcoming, total, excess, planType, recoveriesUsed, recoveriesMax }: { consumed: number; upcoming: number; total: number; excess: number; planType: string; recoveriesUsed: number; recoveriesMax: number }) {
     // When there's excess (N > total), the bar denominator grows to N so the extra
@@ -182,7 +185,7 @@ export default function BonosPage() {
                             <div className="flex justify-between items-start mb-2">
                                 <div>
                                     <p className="font-semibold text-gray-900">{v.voucherName || v.serviceName}</p>
-                                    <p className="text-sm text-gray-500">{v.serviceName}</p>
+                                    <p className="text-sm text-gray-500">{v.serviceName} - <span className="font-bold text-gray-700">{MONTHS[v.periodMonth] || ""}</span></p>
                                 </div>
                                 <span className={`text-xs font-medium px-2 py-1 rounded-full border ${statusColor(v.status)}`}>
                                     {statusLabel(v.status)}
