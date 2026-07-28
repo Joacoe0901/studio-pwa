@@ -70,7 +70,7 @@ export default function HorariosPage() {
                 </button>
                 <h1 className="text-lg font-bold text-white">Horarios</h1>
             </header>
-            <main className="flex-1 px-6 pt-4 pb-10 overflow-y-auto">
+            <main className="flex-1 min-h-0 px-6 pt-4 pb-10 overflow-y-auto">
                 {loading ? (
                     <p className="text-gray-400 text-sm">Cargando horarios...</p>
                 ) : sortedDays.length === 0 ? (
