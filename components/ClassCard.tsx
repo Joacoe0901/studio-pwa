@@ -29,7 +29,7 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("es-ES", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "UTC",
+    timeZone: "Europe/Madrid",
   });
 }
 
@@ -38,7 +38,7 @@ function formatDateShort(iso: string): string {
     weekday: "short",
     day: "numeric",
     month: "short",
-    timeZone: "UTC",
+    timeZone: "Europe/Madrid",
   });
 }
 

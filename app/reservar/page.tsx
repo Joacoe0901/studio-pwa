@@ -38,14 +38,14 @@ interface StudioBranding {
 /* ─── Helpers ───────────────────────────────────────────────────────────────── */
 
 function isPast(endDateTime: string): boolean {
-  return new Date(endDateTime) < new Date();
+  return new Date(endDateTime).getTime() < Date.now();
 }
 
 function isOutsideBookingWindow(startDateTime: string): boolean {
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + 7);
   maxDate.setHours(23, 59, 59, 999);
-  return new Date(startDateTime) > maxDate;
+  return new Date(startDateTime).getTime() > maxDate.getTime();
 }
 
 function addDays(dateStr: string, days: number): string {
@@ -199,7 +199,7 @@ export default function ReservarPage() {
   const studioName = branding?.studioName ?? "";
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-dvh bg-white flex flex-col overflow-hidden">
       <header className="flex-shrink-0 px-4 pt-10 pb-3 flex items-center gap-3" style={{ backgroundColor: primaryColor }}>
         <button onClick={() => router.back()} className="p-1 text-white/80 hover:text-white transition-colors">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

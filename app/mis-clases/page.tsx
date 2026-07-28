@@ -18,7 +18,7 @@ interface Reservation {
 }
 
 function isPast(endDateTime: string): boolean {
-    return new Date(endDateTime) < new Date();
+    return new Date(endDateTime).getTime() < Date.now();
 }
 
 function currentMonthRange(): { from: string; to: string } {
@@ -112,9 +112,9 @@ export default function MisClasesPage() {
 
     const formatDate = (iso: string) => {
         const d = new Date(iso);
-        return d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+        return d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Madrid" });
     };
-    const formatTime = (iso: string) => new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+    const formatTime = (iso: string) => new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" });
 
     return (
         <div className="min-h-screen bg-white flex flex-col">
