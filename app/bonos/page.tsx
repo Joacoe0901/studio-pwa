@@ -39,7 +39,7 @@ function VoucherProgress({ consumed, upcoming, total, excess, planType, recoveri
                 Consumidas: <span className="font-semibold tabular-nums">{consumed}/{total}</span>{" · "}
                 Agendadas: <span className="font-semibold tabular-nums">{consumed + upcoming}/{total}</span>{" · "}
                 {isMonthly ? (
-                    <>Clases recuperables: <span className="font-semibold tabular-nums">{recoveriesMax > 0 ? `${recoverable}/${recoveriesMax}` : "∞"}</span></>
+                    <>Clases recuperables: <span className="font-semibold tabular-nums">{recoveriesMax > 0 ? recoverable : "∞"}</span></>
                 ) : (
                     <>Disponibles: <span className="font-semibold tabular-nums">{available}/{total}</span></>
                 )}
