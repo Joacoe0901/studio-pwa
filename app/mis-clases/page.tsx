@@ -21,14 +21,18 @@ function isPast(endDateTime: string): boolean {
     return new Date(endDateTime).getTime() < Date.now();
 }
 
-function currentMonthRange(): { from: string; to: string } {
+function currentAndNextMonthRange(): { from: string; to: string } {
     const now = new Date();
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, "0");
-    const lastDay = new Date(yyyy, now.getMonth() + 1, 0).getDate();
+    // Last day of next month — JS Date handles year rollover automatically (e.g. Dec → Jan)
+    const nextMonth = new Date(yyyy, now.getMonth() + 2, 0);
+    const nextYYYY = nextMonth.getFullYear();
+    const nextMM = String(nextMonth.getMonth() + 1).padStart(2, "0");
+    const nextLastDay = nextMonth.getDate();
     return {
         from: `${yyyy}-${mm}-01`,
-        to: `${yyyy}-${mm}-${String(lastDay).padStart(2, "0")}`,
+        to: `${nextYYYY}-${nextMM}-${String(nextLastDay).padStart(2, "0")}`,
     };
 }
 
@@ -78,9 +82,9 @@ export default function MisClasesPage() {
         load();
     }, [router]);
 
-    /* Filter: current month only, sorted nearest → farthest */
+    /* Filter: current + next month, sorted nearest → farthest */
     const reservations = useMemo(() => {
-        const { from, to } = currentMonthRange();
+        const { from, to } = currentAndNextMonthRange();
         return allReservations
             .filter((r) => r.startDateTime >= from && r.startDateTime <= to + "T23:59:59")
             .sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime());
