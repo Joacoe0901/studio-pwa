@@ -115,7 +115,7 @@ export default function PerfilPage() {
     };
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="h-dvh bg-white flex flex-col overflow-hidden">
             <header className="flex-shrink-0 px-4 pt-10 pb-3 flex items-center gap-3" style={{ backgroundColor: primaryColor }}>
                 <button onClick={() => router.back()} className="p-1 text-white/80 hover:text-white transition-colors">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -124,7 +124,7 @@ export default function PerfilPage() {
                 </button>
                 <h1 className="text-lg font-bold text-white">Perfil</h1>
             </header>
-            <main className="flex-1 px-6 pb-10 pt-4 overflow-y-auto">
+            <main className="flex-1 min-h-0 px-6 pb-10 pt-4 overflow-y-auto">
                 {!profile ? (
                     <p className="text-gray-400 text-sm">Cargando...</p>
                 ) : (
