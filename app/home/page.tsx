@@ -314,7 +314,7 @@ export default function HomePage() {
       {/* Hamburger menu overlay */}
       {menuOpen && (
         <div className="fixed inset-0 z-50 flex">
-          <div className="flex-1 bg-black/30" onClick={() => setMenuOpen(false)} />
+          <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
           <div className="w-72 bg-white h-full shadow-xl flex flex-col">
             {/* Close button */}
             <div className="flex justify-end p-4">

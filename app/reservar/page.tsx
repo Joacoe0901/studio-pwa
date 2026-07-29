@@ -74,6 +74,7 @@ export default function ReservarPage() {
     primaryColor: cached.primaryColor,
     calendarDays: "MON_FRI",
   });
+  const [primaryColor, setPrimaryColor] = useState("#4A7C59");
   const [sessions, setSessions] = useState<ClientBookableSession[]>([]);
   const [days, setDays] = useState<CalendarDay[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(todayStr());
@@ -92,6 +93,13 @@ export default function ReservarPage() {
       router.replace("/login");
     }
   }, [router]);
+
+  /* Load primary color */
+  useEffect(() => {
+    apiFetch<{ primaryColor: string }>("/client/company")
+      .then((d) => setPrimaryColor(d.primaryColor || "#4A7C59"))
+      .catch(() => {});
+  }, []);
 
   /* Load branding */
   useEffect(() => {
@@ -195,7 +203,6 @@ export default function ReservarPage() {
   };
 
   /* Derived */
-  const primaryColor = branding?.primaryColor ?? "#4A7C59";
   const studioName = branding?.studioName ?? "";
 
   return (
