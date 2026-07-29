@@ -69,13 +69,13 @@ export default function NotificationsBottomSheet({
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <div
-        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${dismissing ? "opacity-0" : "opacity-100"}`}
+        className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${dismissing ? "opacity-0" : "opacity-100"}`}
         onClick={handleClose}
       />
       <div
         ref={sheetRef}
         className={`relative w-full bg-white rounded-t-3xl shadow-2xl flex flex-col transition-transform duration-300 ease-out ${dismissing ? "translate-y-full" : "translate-y-0"} ${open && !dismissing ? "animate-slide-up" : ""}`}
-        style={{ maxHeight: "80vh" }}
+        style={{ maxHeight: "50dvh" }}
       >
         <div
           data-sheet-handle
@@ -86,7 +86,7 @@ export default function NotificationsBottomSheet({
         >
           <div className="mx-auto w-10 h-1 rounded-full bg-gray-300" />
         </div>
-        <div className="flex items-center justify-between px-6 pt-2 pb-3">
+        <div className="flex-shrink-0 flex items-center justify-between px-6 pt-2 pb-3">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-gray-900">Notificaciones</h2>
             {unreadCount > 0 && (
@@ -101,7 +101,7 @@ export default function NotificationsBottomSheet({
             </svg>
           </button>
         </div>
-        <div className="mx-6 border-t border-gray-100" />
+        <div className="flex-shrink-0 mx-6 border-t border-gray-100" />
         <div className="flex-1 overflow-y-auto px-4 py-3 pb-8">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
