@@ -149,7 +149,8 @@ export default function BonosPage() {
     const statusColor = (status: string) => {
         switch (status) {
             case "ACTIVE": return "text-green-600 bg-green-50 border-green-200";
-            case "FINISHED": return "text-gray-500 bg-gray-50 border-gray-200";
+            case "INACTIVE": return "text-amber-600 bg-amber-50 border-amber-200";
+            case "FINISHED": return "text-blue-600 bg-blue-50 border-blue-200";
             case "EXPIRED": return "text-red-500 bg-red-50 border-red-200";
             default: return "text-gray-500 bg-gray-50 border-gray-200";
         }
@@ -158,8 +159,9 @@ export default function BonosPage() {
     const statusLabel = (status: string) => {
         switch (status) {
             case "ACTIVE": return "Activo";
-            case "FINISHED": return "Finalizado";
-            case "EXPIRED": return "Expirado";
+            case "INACTIVE": return "Inactivo";
+            case "FINISHED": return "Completado";
+            case "EXPIRED": return "Vencido";
             default: return status;
         }
     };
