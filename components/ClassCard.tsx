@@ -92,11 +92,19 @@ export default function ClassCard({
     buttonAction = () => onCancel(session); // cancel waitlist
     buttonDisabled = loading;
   } else if (isFull) {
-    buttonLabel = "En Lista";
-    buttonClass =
-      "bg-gray-800 text-white font-medium px-5 py-2 rounded-xl hover:bg-gray-900 active:scale-[0.98] transition-all shadow-sm";
-    buttonAction = () => onWaitlist(session);
-    buttonDisabled = loading;
+    if (isOutsideWindow) {
+      buttonLabel = "En Lista";
+      buttonClass =
+        "text-gray-400 font-medium px-4 py-2 rounded-xl border border-gray-200 cursor-not-allowed text-xs";
+      buttonDisabled = true;
+      buttonAction = () => {};
+    } else {
+      buttonLabel = "En Lista";
+      buttonClass =
+        "bg-gray-800 text-white font-medium px-5 py-2 rounded-xl hover:bg-gray-900 active:scale-[0.98] transition-all shadow-sm";
+      buttonAction = () => onWaitlist(session);
+      buttonDisabled = loading;
+    }
   } else if (isOutsideWindow) {
     buttonLabel = "RESERVAR";
     buttonClass =
