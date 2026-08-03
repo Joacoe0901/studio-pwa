@@ -100,6 +100,16 @@ export interface Enrollment {
 
 export interface ClassSessionDetail extends ClassSession {
   enrollments: Enrollment[];
+  waitlist?: WaitlistEntry[];
+}
+
+export interface WaitlistEntry {
+  id: number;
+  customerId: number;
+  firstName: string;
+  lastName: string;
+  classSessionId: number;
+  createdAt: string;
 }
 
 export interface CreateSessionPayload {

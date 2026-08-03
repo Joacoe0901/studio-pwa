@@ -8,7 +8,7 @@ interface ClassSession {
 }
 
 interface ConfirmationModalProps {
-  type: "reserve" | "cancel" | "error";
+  type: "reserve" | "cancel" | "waitlist" | "error";
   session: ClassSession;
   onConfirm?: () => void;
   onClose: () => void;
@@ -48,6 +48,7 @@ export default function ConfirmationModal({
   tone = "danger",
 }: ConfirmationModalProps) {
   const isReserve = type === "reserve";
+  const isWaitlist = type === "waitlist";
   const isError = type === "error";
   const toneBox: Record<string, string> = {
     danger: "bg-red-50 border-red-100",
@@ -74,10 +75,10 @@ export default function ConfirmationModal({
         <div className="flex flex-col items-center px-5 pt-6 pb-2 text-center">
           <div
             className={`w-14 h-14 rounded-full flex items-center justify-center mb-3 ${
-              isReserve ? "bg-green-100" : "bg-red-100"
+              isReserve || isWaitlist ? "bg-green-100" : "bg-red-100"
             }`}
           >
-            {isReserve ? (
+            {isReserve || isWaitlist ? (
               <svg
                 className="w-7 h-7 text-green-600"
                 fill="none"
@@ -110,9 +111,11 @@ export default function ConfirmationModal({
           <h2 className="text-lg font-bold text-gray-900">
             {isError
               ? title ?? "No hay clases disponibles"
-              : isReserve
-                ? "Confirmar Reserva"
-                : "Cancelar Reserva"}
+              : isWaitlist
+                ? "Lista de espera"
+                : isReserve
+                  ? "Confirmar Reserva"
+                  : "Cancelar Reserva"}
           </h2>
         </div>
 
@@ -132,7 +135,11 @@ export default function ConfirmationModal({
 
         {/* Message */}
         <div className="px-5 pt-2 pb-4">
-          {isReserve ? (
+          {isWaitlist ? (
+            <p className="text-sm text-gray-600 text-center leading-relaxed">
+              La clase está completa. ¿Querés entrar en la lista de espera? Te avisaremos si se libera un lugar.
+            </p>
+          ) : isReserve ? (
             <p className="text-sm text-gray-600 text-center leading-relaxed">
               ¿Estás seguro de que deseas reservar esta clase?
             </p>
@@ -173,13 +180,13 @@ export default function ConfirmationModal({
                 disabled={loading}
                 className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50 active:scale-[0.98] transition-all disabled:opacity-50"
               >
-                {isReserve ? "Cancelar" : "Volver"}
+                {isWaitlist ? "Cancelar" : isReserve ? "Cancelar" : "Volver"}
               </button>
               <button
                 onClick={onConfirm}
                 disabled={loading}
                 className="flex-1 py-2.5 rounded-xl text-white font-medium text-sm active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
-                style={{ backgroundColor: isReserve ? primaryColor : "#EF4444" }}
+                style={{ backgroundColor: isWaitlist ? "#4B5563" : isReserve ? primaryColor : "#EF4444" }}
               >
                 {loading && (
                   <svg
@@ -202,7 +209,7 @@ export default function ConfirmationModal({
                     />
                   </svg>
                 )}
-                {isReserve ? "Confirmar Reserva" : "Sí, Cancelar"}
+                {isWaitlist ? "Entrar en lista" : isReserve ? "Confirmar Reserva" : "Sí, Cancelar"}
               </button>
             </>
           )}

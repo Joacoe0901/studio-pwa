@@ -10,6 +10,7 @@ interface ClassSession {
   maxCapacity: number;
   enrolledCount: number;
   waitlistCount: number;
+  waitlisted: boolean;
   enrolled: boolean;
   enrollmentId: number | null;
   color: string;
@@ -21,6 +22,7 @@ interface ClassCardProps {
   isOutsideWindow: boolean;
   onReserve: (session: ClassSession) => void;
   onCancel: (session: ClassSession) => void;
+  onWaitlist: (session: ClassSession) => void;
   loading: boolean;
   studioName: string;
 }
@@ -48,17 +50,24 @@ export default function ClassCard({
   isOutsideWindow,
   onReserve,
   onCancel,
+  onWaitlist,
   loading,
   studioName,
 }: ClassCardProps) {
   const isFull = session.enrolledCount >= session.maxCapacity && session.maxCapacity > 0;
-  const isOverbooked = session.waitlistCount > 0;
+  const hasWaitlist = session.waitlistCount > 0;
   const timeRange = `${formatTime(session.startDateTime)} - ${formatTime(session.endDateTime)}`;
 
   // Aforo badge color
   let capacityColor = "text-green-600";
-  if (isOverbooked) capacityColor = "text-amber-600";
+  if (session.waitlisted) capacityColor = "text-amber-600";
+  else if (hasWaitlist) capacityColor = "text-amber-600";
   else if (isFull) capacityColor = "text-red-500";
+
+  // Contador: 5/5 (3) si hay waitlist
+  const capacityLabel = hasWaitlist
+    ? `${session.enrolledCount}/${session.maxCapacity} (${session.waitlistCount})`
+    : `${session.enrolledCount}/${session.maxCapacity}`;
 
   // Botón
   let buttonLabel = "";
@@ -76,12 +85,18 @@ export default function ClassCard({
       "text-red-600 font-medium px-4 py-2 rounded-xl border border-red-200 hover:bg-red-50 active:scale-[0.98] transition-all";
     buttonAction = () => onCancel(session);
     buttonDisabled = loading;
-  } else if (isFull) {
-    buttonLabel = "COMPLETO";
+  } else if (session.waitlisted) {
+    buttonLabel = "En espera ✕";
     buttonClass =
-      "text-gray-400 font-medium px-4 py-2 rounded-xl border border-gray-200 cursor-not-allowed";
-    buttonDisabled = true;
-    buttonAction = () => {};
+      "bg-amber-500 text-white font-medium px-4 py-2 rounded-xl hover:bg-amber-600 active:scale-[0.98] transition-all shadow-sm text-xs";
+    buttonAction = () => onCancel(session); // cancel waitlist
+    buttonDisabled = loading;
+  } else if (isFull) {
+    buttonLabel = "En Lista";
+    buttonClass =
+      "bg-gray-800 text-white font-medium px-5 py-2 rounded-xl hover:bg-gray-900 active:scale-[0.98] transition-all shadow-sm";
+    buttonAction = () => onWaitlist(session);
+    buttonDisabled = loading;
   } else if (isOutsideWindow) {
     buttonLabel = "RESERVAR";
     buttonClass =
@@ -140,7 +155,7 @@ export default function ClassCard({
               />
             </svg>
             <span className={`text-xs font-semibold ${capacityColor}`}>
-              {session.enrolledCount}/{session.maxCapacity}
+              {capacityLabel}
             </span>
           </div>
 

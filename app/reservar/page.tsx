@@ -24,6 +24,7 @@ interface ClientBookableSession {
   maxCapacity: number;
   enrolledCount: number;
   waitlistCount: number;
+  waitlisted: boolean;
   enrolled: boolean;
   enrollmentId: number | null;
   color: string;
@@ -81,8 +82,10 @@ export default function ReservarPage() {
   const [loading, setLoading] = useState(true);
   const [reserving, setReserving] = useState<number | null>(null);
   const [cancelling, setCancelling] = useState<number | null>(null);
+  const [joiningWaitlist, setJoiningWaitlist] = useState<number | null>(null);
   const [confirmReserve, setConfirmReserve] = useState<ClientBookableSession | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<ClientBookableSession | null>(null);
+  const [confirmWaitlist, setConfirmWaitlist] = useState<ClientBookableSession | null>(null);
   const [cancelPreview, setCancelPreview] = useState<{ message: string; tone: "danger" | "warning" | "info" } | null>(null);
   const [errorModal, setErrorModal] = useState<{ session: ClientBookableSession; message: string } | null>(null);
   const [message, setMessage] = useState("");
@@ -148,6 +151,27 @@ export default function ReservarPage() {
     setConfirmReserve(session);
   };
 
+  /* Waitlist */
+  const handleWaitlistClick = (session: ClientBookableSession) => {
+    setMessage("");
+    setConfirmWaitlist(session);
+  };
+
+  const handleConfirmWaitlist = async () => {
+    if (!confirmWaitlist) return;
+    const session = confirmWaitlist;
+    setJoiningWaitlist(session.id);
+    try {
+      await apiFetch("/client/waitlist", { method: "POST", body: JSON.stringify({ classSessionId: session.id }) });
+      setMessage("Entraste en la lista de espera. Te avisaremos si se libera un lugar.");
+      setConfirmWaitlist(null);
+      await loadSessions();
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? err.message : "Error al entrar en lista de espera");
+    }
+    setJoiningWaitlist(null);
+  };
+
   const handleConfirmReserve = async () => {
     if (!confirmReserve) return;
     const session = confirmReserve;
@@ -172,9 +196,23 @@ export default function ReservarPage() {
     setReserving(null);
   };
 
-  /* Cancel */
+  /* Cancel / Leave waitlist */
   const handleCancelClick = async (session: ClientBookableSession) => {
     setMessage("");
+    // If waitlisted, leave waitlist directly
+    if (session.waitlisted) {
+      setCancelling(session.id);
+      try {
+        await apiFetch(`/client/waitlist/${session.id}`, { method: "DELETE" });
+        setMessage("Saliste de la lista de espera.");
+        await loadSessions();
+      } catch (err: unknown) {
+        setMessage(err instanceof Error ? err.message : "Error al salir de la lista de espera");
+      }
+      setCancelling(null);
+      return;
+    }
+    // Otherwise, normal enrollment cancel flow
     setConfirmCancel(session);
     setCancelPreview(null);
     if (!session.enrollmentId) return;
@@ -234,7 +272,7 @@ export default function ReservarPage() {
           </div>
         ) : (
           filteredSessions.map((s) => (
-            <ClassCard key={s.id} session={s} isPast={isPast(s.endDateTime)} isOutsideWindow={isOutsideBookingWindow(s.startDateTime)} onReserve={handleReserveClick} onCancel={handleCancelClick} loading={reserving === s.id || cancelling === s.id} studioName={studioName} />
+            <ClassCard key={s.id} session={s} isPast={isPast(s.endDateTime)} isOutsideWindow={isOutsideBookingWindow(s.startDateTime)} onReserve={handleReserveClick} onCancel={handleCancelClick} onWaitlist={handleWaitlistClick} loading={reserving === s.id || cancelling === s.id || joiningWaitlist === s.id} studioName={studioName} />
           ))
         )}
       </main>
@@ -243,6 +281,9 @@ export default function ReservarPage() {
       )}
       {confirmCancel && (
         <ConfirmationModal type="cancel" session={confirmCancel} message={cancelPreview?.message} tone={cancelPreview?.tone} onConfirm={handleConfirmCancel} onClose={() => { setConfirmCancel(null); setCancelPreview(null); setMessage(""); }} loading={cancelling === confirmCancel.id} primaryColor={primaryColor} />
+      )}
+      {confirmWaitlist && (
+        <ConfirmationModal type="waitlist" session={confirmWaitlist} onConfirm={handleConfirmWaitlist} onClose={() => { setConfirmWaitlist(null); setMessage(""); }} loading={joiningWaitlist === confirmWaitlist.id} primaryColor={primaryColor} />
       )}
       {errorModal && (
         <ConfirmationModal
