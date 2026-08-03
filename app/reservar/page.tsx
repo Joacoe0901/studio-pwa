@@ -162,7 +162,7 @@ export default function ReservarPage() {
     const session = confirmWaitlist;
     setJoiningWaitlist(session.id);
     try {
-      await apiFetch("/client/waitlist", { method: "POST", body: JSON.stringify({ classSessionId: session.id }) });
+      await apiFetch("/client/waitlist", { method: "POST", body: JSON.stringify({ sessionId: session.id }) });
       setMessage("Entraste en la lista de espera. Te avisaremos si se libera un lugar.");
       setConfirmWaitlist(null);
       await loadSessions();
