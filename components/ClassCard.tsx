@@ -86,9 +86,9 @@ export default function ClassCard({
     buttonAction = () => onCancel(session);
     buttonDisabled = loading;
   } else if (session.waitlisted) {
-    buttonLabel = "En espera ✕";
+    buttonLabel = "EN ESPERA ✕";
     buttonClass =
-      "bg-amber-500 text-white font-medium px-4 py-2 rounded-xl hover:bg-amber-600 active:scale-[0.98] transition-all shadow-sm text-xs";
+      "bg-amber-500 text-white font-medium px-5 py-2 rounded-xl hover:bg-amber-600 active:scale-[0.98] transition-all shadow-sm";
     buttonAction = () => onCancel(session); // cancel waitlist
     buttonDisabled = loading;
   } else if (isFull) {
