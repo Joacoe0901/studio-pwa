@@ -47,6 +47,15 @@ export default function RootLayout({
             __html: `
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
+
+  // Listen for notification click messages from the Service Worker.
+  // When the user taps a push notification, the SW posts a message
+  // with the target URL so the open PWA window can navigate.
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'NOTIFICATION_CLICK' && event.data.url) {
+      window.location.href = event.data.url;
+    }
+  });
 }`,
           }}
         />

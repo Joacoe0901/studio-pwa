@@ -6,6 +6,7 @@ import { apiFetch, clearToken, getAccessToken, resolveUploadUrl } from "@/lib/ap
 import { getCachedBranding, setCachedBranding, type CachedBranding } from "@/lib/branding";
 import NotificationsBottomSheet from "@/components/NotificationsBottomSheet";
 import NotificationDetailModal from "@/components/NotificationDetailModal";
+import { isPushSupported, getNotificationPermission, subscribeToPush, unsubscribeFromPush, isSubscribed, checkSubscription } from "@/lib/push";
 
 interface StudioBranding {
   studioName: string;
@@ -111,6 +112,11 @@ export default function HomePage() {
   const [badgeAnimating, setBadgeAnimating] = useState(false);
   const prevUnreadRef = useRef<number>(0);
 
+  /* ─── Push notifications state ──────────────────────────────────────────── */
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const loadNotifications = useCallback(() => {
@@ -190,6 +196,36 @@ export default function HomePage() {
     setDetailOpen(false);
     setDetailNotification(null);
   }, [detailNotification, markRead]);
+
+  /* ─── Push notification toggle ─────────────────────────────────────────── */
+  const handleTogglePush = useCallback(async () => {
+    setPushLoading(true);
+    try {
+      const token = getAccessToken();
+      if (!token) return;
+
+      if (pushEnabled) {
+        await unsubscribeFromPush(token);
+        setPushEnabled(false);
+      } else {
+        await subscribeToPush(token);
+        setPushEnabled(true);
+      }
+    } catch (err) {
+      // If permission denied or not supported, just stay disabled.
+      setPushEnabled(false);
+    } finally {
+      setPushLoading(false);
+    }
+  }, [pushEnabled]);
+
+  // Check push support on mount
+  useEffect(() => {
+    setPushSupported(isPushSupported());
+    if (isPushSupported()) {
+      checkSubscription().then(setPushEnabled);
+    }
+  }, []);
 
   const fullName = profile ? `${profile.firstName} ${profile.lastName}` : "";
   const initials = profile
@@ -379,6 +415,31 @@ export default function HomePage() {
 
             {/* Logout button at bottom */}
             <div className="px-4 pb-6 pt-2">
+              {/* Push notifications toggle */}
+              {pushSupported && (
+                <button
+                  onClick={handleTogglePush}
+                  disabled={pushLoading}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium mb-2 transition-colors ${
+                    pushEnabled
+                      ? "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                      : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100"
+                  } disabled:opacity-50`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    {pushEnabled ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.143 17.082a24.248 24.248 0 0 0 3.844.148m-3.844-.148a23.856 23.856 0 0 1-5.455-1.31 8.964 8.964 0 0 0 2.3-5.542m3.155 6.852a3 3 0 0 0 5.667 1.97m1.965-2.277L21 21m-4.225-4.225a23.81 23.81 0 0 0 3.536-1.003A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6.53 6.53m10.245 10.245L6.53 6.53M3 3l3.53 3.53" />
+                    )}
+                  </svg>
+                  {pushLoading
+                    ? "Actualizando..."
+                    : pushEnabled
+                    ? "Notificaciones push activadas"
+                    : "Activar notificaciones push"}
+                </button>
+              )}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 transition-colors"

@@ -26,7 +26,7 @@ export async function GET() {
                     src: appIconUrl,
                     sizes: "512x512",
                     type: "image/png",
-                    purpose: "any",
+                    purpose: "any maskable",
                 },
             ],
         };
@@ -43,7 +43,7 @@ export async function GET() {
                 theme_color: "#3B82F6",
                 orientation: "portrait",
                 icons: [
-                    { src: "/andes_logo_pwa.png", sizes: "512x512", type: "image/png", purpose: "any" },
+                    { src: "/andes_logo_pwa.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
                 ],
             }
         );
