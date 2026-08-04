@@ -238,6 +238,25 @@ export default function HomePage() {
     }
   }, []);
 
+  // Listen for push-click and new-notification events from the SW.
+  // push-click → user tapped a push notification while already on /home
+  // new-notification → a push just arrived; refresh the badge & list
+  useEffect(() => {
+    const handlePushClick = () => {
+      loadNotifications();
+      setSheetOpen(true);
+    };
+    const handleNewNotification = () => {
+      loadNotifications();
+    };
+    window.addEventListener("push-click", handlePushClick);
+    window.addEventListener("new-notification", handleNewNotification);
+    return () => {
+      window.removeEventListener("push-click", handlePushClick);
+      window.removeEventListener("new-notification", handleNewNotification);
+    };
+  }, [loadNotifications]);
+
   const fullName = profile ? `${profile.firstName} ${profile.lastName}` : "";
   const initials = profile
     ? `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase()

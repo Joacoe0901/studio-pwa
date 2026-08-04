@@ -48,12 +48,20 @@ export default function RootLayout({
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 
-  // Listen for notification click messages from the Service Worker.
-  // When the user taps a push notification, the SW posts a message
-  // with the target URL so the open PWA window can navigate.
+  // Listen for notification click & new-notification messages from the SW.
+  // If already on the target page, dispatch a custom event instead of navigating.
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'NOTIFICATION_CLICK' && event.data.url) {
-      window.location.href = event.data.url;
+      const targetUrl = event.data.url;
+      const currentPath = window.location.pathname + window.location.search;
+      if (targetUrl === currentPath) {
+        window.dispatchEvent(new CustomEvent('push-click'));
+      } else {
+        window.location.href = targetUrl;
+      }
+    }
+    if (event.data && event.data.type === 'NEW_NOTIFICATION') {
+      window.dispatchEvent(new CustomEvent('new-notification'));
     }
   });
 }`,
