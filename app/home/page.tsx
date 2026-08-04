@@ -238,9 +238,8 @@ export default function HomePage() {
     }
   }, []);
 
-  // Listen for push-click and new-notification events from the SW.
-  // push-click → user tapped a push notification while already on /home
-  // new-notification → a push just arrived; refresh the badge & list
+  // Listen for push-click and new-notification from the SW.
+  // Uses BroadcastChannel (most reliable) + DOM custom events (fallback).
   useEffect(() => {
     const handlePushClick = () => {
       loadNotifications();
@@ -249,9 +248,32 @@ export default function HomePage() {
     const handleNewNotification = () => {
       loadNotifications();
     };
+
+    // ── BroadcastChannel (primary, most reliable) ──
+    let bc: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== "undefined") {
+      bc = new BroadcastChannel("studio-push");
+      bc.addEventListener("message", (event) => {
+        if (!event.data) return;
+        if (event.data.type === "NOTIFICATION_CLICK" && event.data.url) {
+          const currentPath = window.location.pathname + window.location.search;
+          if (event.data.url === currentPath) {
+            loadNotifications();
+            setSheetOpen(true);
+          }
+        }
+        if (event.data.type === "NEW_NOTIFICATION") {
+          loadNotifications();
+        }
+      });
+    }
+
+    // ── Fallback: custom DOM events (fired by layout.tsx) ──
     window.addEventListener("push-click", handlePushClick);
     window.addEventListener("new-notification", handleNewNotification);
+
     return () => {
+      if (bc) bc.close();
       window.removeEventListener("push-click", handlePushClick);
       window.removeEventListener("new-notification", handleNewNotification);
     };

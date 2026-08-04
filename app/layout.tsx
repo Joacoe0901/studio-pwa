@@ -48,12 +48,33 @@ export default function RootLayout({
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 
-  // Listen for notification click & new-notification messages from the SW.
-  // If already on the target page, dispatch a custom event instead of navigating.
-  navigator.serviceWorker.addEventListener('message', (event) => {
+  // ── BroadcastChannel (most reliable SW ⇄ main thread messaging) ──
+  if ('BroadcastChannel' in window) {
+    var bc = new BroadcastChannel('studio-push');
+    bc.addEventListener('message', function(event) {
+      if (!event.data) return;
+      // NOTIFICATION_CLICK: navigate or stay
+      if (event.data.type === 'NOTIFICATION_CLICK' && event.data.url) {
+        var targetUrl = event.data.url;
+        var currentPath = window.location.pathname + window.location.search;
+        if (targetUrl === currentPath) {
+          window.dispatchEvent(new CustomEvent('push-click'));
+        } else {
+          window.location.href = targetUrl;
+        }
+      }
+      // NEW_NOTIFICATION: refresh badge
+      if (event.data.type === 'NEW_NOTIFICATION') {
+        window.dispatchEvent(new CustomEvent('new-notification'));
+      }
+    });
+  }
+
+  // ── Fallback: classic service worker message listener ──
+  navigator.serviceWorker.addEventListener('message', function(event) {
     if (event.data && event.data.type === 'NOTIFICATION_CLICK' && event.data.url) {
-      const targetUrl = event.data.url;
-      const currentPath = window.location.pathname + window.location.search;
+      var targetUrl = event.data.url;
+      var currentPath = window.location.pathname + window.location.search;
       if (targetUrl === currentPath) {
         window.dispatchEvent(new CustomEvent('push-click'));
       } else {
