@@ -227,6 +227,17 @@ export default function HomePage() {
     }
   }, []);
 
+  // Auto-open notifications sheet when arriving from a push notification click.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("openNotifications") === "true") {
+      setSheetOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("openNotifications");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
+
   const fullName = profile ? `${profile.firstName} ${profile.lastName}` : "";
   const initials = profile
     ? `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase()
