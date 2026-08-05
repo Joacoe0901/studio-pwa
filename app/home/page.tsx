@@ -139,21 +139,31 @@ export default function HomePage() {
     prevUnreadRef.current = unreadCount;
   }, [unreadCount]);
 
+  /* ── Track whether branding has been loaded from the API ────────────── */
+  const brandingLoadedRef = useRef(false);
+
   useEffect(() => {
     if (!getAccessToken()) {
       router.replace("/login");
       return;
     }
 
-    /* Fetch and apply studio branding, with validation and retry. */
+    let cancelled = false;
+    const pendingTimeouts = new Set<ReturnType<typeof setTimeout>>();
+
+    /* Fetch and apply studio branding, with aggressive retry. */
     const loadBranding = (retries = 0) => {
+      // Don't bother if the inline script already updated branding.
+      if (cancelled || brandingLoadedRef.current) return;
+
       apiFetch<StudioBranding>("/client/company")
         .then((data) => {
-          // Only apply if the API returned valid colours — otherwise keep cached.
+          if (cancelled) return;
+          // Only apply if the API returned valid colours.
           if (data && data.primaryColor && data.secondaryColor) {
+            brandingLoadedRef.current = true;
             setBranding(data);
             setCachedBranding(data);
-            // Update CSS custom properties for meta theme-color and other consumers.
             if (typeof document !== "undefined") {
               document.documentElement.style.setProperty("--brand-primary", data.primaryColor);
               document.documentElement.style.setProperty("--brand-secondary", data.secondaryColor);
@@ -164,26 +174,51 @@ export default function HomePage() {
               const meta = document.querySelector('meta[name="theme-color"]');
               if (meta) meta.setAttribute("content", data.primaryColor);
             }
-          } else if (retries < 2) {
-            // Empty response — retry after a short delay.
-            setTimeout(() => loadBranding(retries + 1), 2000);
+          } else if (retries < 12) {
+            // Empty response — server may be cold, retry with exponential backoff.
+            const delay = Math.min(1000 * Math.pow(1.5, retries), 30000);
+            const id = setTimeout(() => loadBranding(retries + 1), delay);
+            pendingTimeouts.add(id);
           }
         })
         .catch((err) => {
-          console.warn("[Home] Branding fetch failed, keeping cached:", err?.message || err);
-          if (retries < 2) {
-            setTimeout(() => loadBranding(retries + 1), 2000);
+          if (cancelled) return;
+          console.warn("[Home] Branding fetch failed, retrying:", err?.message || err);
+          if (retries < 12) {
+            const delay = Math.min(1000 * Math.pow(1.5, retries), 30000);
+            const id = setTimeout(() => loadBranding(retries + 1), delay);
+            pendingTimeouts.add(id);
           }
         });
     };
     loadBranding();
 
+    /* Listen for branding-updated event from the layout inline script.
+       The script runs before React and keeps retrying until it succeeds.
+       This ensures branding is applied even if the component's own fetch hasn't
+       completed yet. */
+    const handleBrandingUpdated = (e: Event) => {
+      if (cancelled) return;
+      const detail = (e as CustomEvent).detail as StudioBranding;
+      if (detail && detail.primaryColor && detail.secondaryColor) {
+        brandingLoadedRef.current = true;
+        setBranding(detail);
+      }
+    };
+    window.addEventListener("branding-updated", handleBrandingUpdated);
+
     apiFetch<ClientProfile>("/client/me")
-      .then((data) => setProfile(data))
+      .then((data) => { if (!cancelled) setProfile(data); })
       .catch(() => { });
 
-    /* Fetch notifications on mount */
     loadNotifications();
+
+    return () => {
+      cancelled = true;
+      pendingTimeouts.forEach(clearTimeout);
+      pendingTimeouts.clear();
+      window.removeEventListener("branding-updated", handleBrandingUpdated);
+    };
   }, [router, loadNotifications]);
 
   /* ─── Poll notifications every 20s so new messages appear without reload ── */
