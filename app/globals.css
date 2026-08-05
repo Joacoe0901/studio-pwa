@@ -5,8 +5,8 @@
 /* Native app feel: no scroll, no bounce, fixed viewport */
 @layer base {
   :root {
-    --brand-primary: #6B7280;
-    --brand-secondary: #9CA3AF;
+    --brand-primary: #53593D;
+    --brand-secondary: #E8E7E6;
     --brand-bg-image: none;
   }
   * {
