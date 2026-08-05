@@ -22,7 +22,7 @@ export default function EmpresaPage() {
     const router = useRouter();
     const [info, setInfo] = useState<StudioInfo | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const primaryColor = info?.primaryColor || "#6B7280";
+    const primaryColor = info?.primaryColor || "#53593D";
     const logoUrl = info?.logoUrl ? resolveUploadUrl(info.logoUrl) : null;
 
     useEffect(() => {

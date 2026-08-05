@@ -75,7 +75,7 @@ export default function ReservarPage() {
     primaryColor: cached.primaryColor,
     calendarDays: "MON_FRI",
   });
-  const [primaryColor, setPrimaryColor] = useState("#6B7280");
+  const [primaryColor, setPrimaryColor] = useState("#53593D");
   const [sessions, setSessions] = useState<ClientBookableSession[]>([]);
   const [days, setDays] = useState<CalendarDay[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(todayStr());
@@ -100,7 +100,7 @@ export default function ReservarPage() {
   /* Load primary color */
   useEffect(() => {
     apiFetch<{ primaryColor: string }>("/client/company")
-      .then((d) => setPrimaryColor(d.primaryColor || "#6B7280"))
+      .then((d) => setPrimaryColor(d.primaryColor || "#53593D"))
       .catch(() => {});
   }, []);
 

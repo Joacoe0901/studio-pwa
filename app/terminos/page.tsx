@@ -14,7 +14,7 @@ export default function TerminosPage() {
     const router = useRouter();
     const [info, setInfo] = useState<CompanyInfo | null>(null);
     const [loading, setLoading] = useState(true);
-    const primaryColor = info?.primaryColor || "#6B7280";
+    const primaryColor = info?.primaryColor || "#53593D";
 
     useEffect(() => {
         apiFetch<CompanyInfo>("/client/company")
