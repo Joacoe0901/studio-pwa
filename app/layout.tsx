@@ -48,19 +48,53 @@ export default function RootLayout({
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 
+  // ── Inject branding CSS custom properties from localStorage ──
+  // Runs before React mounts, so the correct colours are available immediately.
+  try {
+    var branding = JSON.parse(localStorage.getItem('studioBranding'));
+    if (branding) {
+      if (branding.primaryColor) {
+        document.documentElement.style.setProperty('--brand-primary', branding.primaryColor);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', branding.primaryColor);
+      }
+      if (branding.secondaryColor) {
+        document.documentElement.style.setProperty('--brand-secondary', branding.secondaryColor);
+      }
+      if (branding.backgroundImageUrl) {
+        document.documentElement.style.setProperty('--brand-bg-image', 'url(' + branding.backgroundImageUrl + ')');
+      }
+    }
+  } catch(e) {}
+
   // ── BroadcastChannel (most reliable SW ⇄ main thread messaging) ──
   if ('BroadcastChannel' in window) {
     var bc = new BroadcastChannel('studio-push');
     bc.addEventListener('message', function(event) {
       if (!event.data) return;
-      // NOTIFICATION_CLICK: navigate or stay
+      // NOTIFICATION_CLICK: compare only pathname to avoid unnecessary reloads.
       if (event.data.type === 'NOTIFICATION_CLICK' && event.data.url) {
         var targetUrl = event.data.url;
-        var currentPath = window.location.pathname + window.location.search;
-        if (targetUrl === currentPath) {
-          window.dispatchEvent(new CustomEvent('push-click'));
-        } else {
-          window.location.href = targetUrl;
+        try {
+          var target = new URL(targetUrl, window.location.origin);
+          var current = new URL(window.location.href);
+          if (target.pathname === current.pathname) {
+            // Same page – just fire the event, no reload needed.
+            window.dispatchEvent(new CustomEvent('push-click'));
+            if (target.searchParams.get('openNotifications') === 'true') {
+              window.dispatchEvent(new CustomEvent('open-notifications-sheet'));
+            }
+          } else {
+            window.location.href = targetUrl;
+          }
+        } catch(e) {
+          // Fallback: simple string compare
+          var currentPath = window.location.pathname + window.location.search;
+          if (targetUrl === currentPath) {
+            window.dispatchEvent(new CustomEvent('push-click'));
+          } else {
+            window.location.href = targetUrl;
+          }
         }
       }
       // NEW_NOTIFICATION: refresh badge
@@ -74,11 +108,24 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', function(event) {
     if (event.data && event.data.type === 'NOTIFICATION_CLICK' && event.data.url) {
       var targetUrl = event.data.url;
-      var currentPath = window.location.pathname + window.location.search;
-      if (targetUrl === currentPath) {
-        window.dispatchEvent(new CustomEvent('push-click'));
-      } else {
-        window.location.href = targetUrl;
+      try {
+        var target = new URL(targetUrl, window.location.origin);
+        var current = new URL(window.location.href);
+        if (target.pathname === current.pathname) {
+          window.dispatchEvent(new CustomEvent('push-click'));
+          if (target.searchParams.get('openNotifications') === 'true') {
+            window.dispatchEvent(new CustomEvent('open-notifications-sheet'));
+          }
+        } else {
+          window.location.href = targetUrl;
+        }
+      } catch(e) {
+        var currentPath = window.location.pathname + window.location.search;
+        if (targetUrl === currentPath) {
+          window.dispatchEvent(new CustomEvent('push-click'));
+        } else {
+          window.location.href = targetUrl;
+        }
       }
     }
     if (event.data && event.data.type === 'NEW_NOTIFICATION') {

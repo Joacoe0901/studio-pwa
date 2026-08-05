@@ -101,6 +101,7 @@ export default function HomePage() {
 
   const cached = getCachedBranding();
   const [branding, setBranding] = useState<StudioBranding>(cached);
+  const [brandingLoading, setBrandingLoading] = useState(!cached.backgroundImageUrl || cached.primaryColor === "#4A7C59");
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -149,8 +150,22 @@ export default function HomePage() {
       .then((data) => {
         setBranding(data);
         setCachedBranding(data);
+        setBrandingLoading(false);
+        // Update CSS custom properties so all components reflect the studio's brand.
+        if (typeof document !== "undefined") {
+          document.documentElement.style.setProperty("--brand-primary", data.primaryColor);
+          document.documentElement.style.setProperty("--brand-secondary", data.secondaryColor);
+          document.documentElement.style.setProperty(
+            "--brand-bg-image",
+            data.backgroundImageUrl ? `url(${data.backgroundImageUrl})` : "none"
+          );
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", data.primaryColor);
+        }
       })
-      .catch(() => { });
+      .catch(() => {
+        setBrandingLoading(false);
+      });
 
     apiFetch<ClientProfile>("/client/me")
       .then((data) => setProfile(data))
@@ -160,9 +175,9 @@ export default function HomePage() {
     loadNotifications();
   }, [router, loadNotifications]);
 
-  /* ─── Poll notifications every 60s so new messages appear without reload ── */
+  /* ─── Poll notifications every 20s so new messages appear without reload ── */
   useEffect(() => {
-    const t = setInterval(loadNotifications, 60000);
+    const t = setInterval(loadNotifications, 20000);
     return () => clearInterval(t);
   }, [loadNotifications]);
 
@@ -239,7 +254,8 @@ export default function HomePage() {
   }, []);
 
   // Listen for push-click and new-notification from the SW.
-  // Uses BroadcastChannel (most reliable) + DOM custom events (fallback).
+  // These are fired by layout.tsx (script inline) via custom DOM events,
+  // which in turn receives them from the SW via BroadcastChannel.
   useEffect(() => {
     const handlePushClick = () => {
       loadNotifications();
@@ -248,34 +264,19 @@ export default function HomePage() {
     const handleNewNotification = () => {
       loadNotifications();
     };
+    const handleOpenNotificationsSheet = () => {
+      loadNotifications();
+      setSheetOpen(true);
+    };
 
-    // ── BroadcastChannel (primary, most reliable) ──
-    let bc: BroadcastChannel | null = null;
-    if (typeof BroadcastChannel !== "undefined") {
-      bc = new BroadcastChannel("studio-push");
-      bc.addEventListener("message", (event) => {
-        if (!event.data) return;
-        if (event.data.type === "NOTIFICATION_CLICK" && event.data.url) {
-          const currentPath = window.location.pathname + window.location.search;
-          if (event.data.url === currentPath) {
-            loadNotifications();
-            setSheetOpen(true);
-          }
-        }
-        if (event.data.type === "NEW_NOTIFICATION") {
-          loadNotifications();
-        }
-      });
-    }
-
-    // ── Fallback: custom DOM events (fired by layout.tsx) ──
     window.addEventListener("push-click", handlePushClick);
     window.addEventListener("new-notification", handleNewNotification);
+    window.addEventListener("open-notifications-sheet", handleOpenNotificationsSheet);
 
     return () => {
-      if (bc) bc.close();
       window.removeEventListener("push-click", handlePushClick);
       window.removeEventListener("new-notification", handleNewNotification);
+      window.removeEventListener("open-notifications-sheet", handleOpenNotificationsSheet);
     };
   }, [loadNotifications]);
 
@@ -319,7 +320,7 @@ export default function HomePage() {
           style={
             branding.backgroundImageUrl
               ? { backgroundImage: `url(${branding.backgroundImageUrl})` }
-              : { background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})` }
+              : { background: `linear-gradient(135deg, var(--brand-primary, ${branding.primaryColor}), var(--brand-secondary, ${branding.secondaryColor}))` }
           }
         />
       </div>
@@ -330,12 +331,12 @@ export default function HomePage() {
         <button
           onClick={() => router.push(primaryCard.href)}
           className="flex-shrink-0 w-full relative rounded-2xl py-[clamp(14px,2.2dvh,34px)] px-6 text-left active:scale-[0.98] transition-transform mb-[clamp(8px,1.5dvh,12px)]"
-          style={{ backgroundColor: branding.secondaryColor, boxShadow: "0 4px 16px rgba(74,124,89,0.10)" }}
+          style={{ backgroundColor: `var(--brand-secondary, ${branding.secondaryColor})`, boxShadow: "0 4px 16px rgba(74,124,89,0.10)" }}
         >
           <div className="flex items-center gap-4">
             <div
               className="flex-shrink-0 w-[clamp(52px,8.5dvh,80px)] h-[clamp(52px,8.5dvh,80px)] rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: branding.primaryColor }}
+              style={{ backgroundColor: `var(--brand-primary, ${branding.primaryColor})` }}
             >
               <svg className="w-[clamp(26px,4.2dvh,40px)] h-[clamp(26px,4.2dvh,40px)] text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d={primaryCard.iconPath} />
@@ -362,7 +363,7 @@ export default function HomePage() {
             >
               <div
                 className="flex-shrink-0 w-[clamp(40px,7dvh,52px)] h-[clamp(40px,7dvh,52px)] rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: branding.primaryColor }}
+                style={{ backgroundColor: `var(--brand-primary, ${branding.primaryColor})` }}
               >
                 <svg
                   className="w-[clamp(22px,3.6dvh,28px)] h-[clamp(22px,3.6dvh,28px)] text-white"
@@ -382,10 +383,10 @@ export default function HomePage() {
           <button
             onClick={handleOpenSheet}
             className="relative inline-flex items-center gap-2.5 rounded-2xl px-5 py-[clamp(10px,1.6dvh,14px)] active:scale-[0.98] transition-transform"
-            style={{ backgroundColor: branding.secondaryColor, boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}
+            style={{ backgroundColor: `var(--brand-secondary, ${branding.secondaryColor})`, boxShadow: "0 4px 16px rgba(0,0,0,0.04)" }}
           >
             <div className="relative flex-shrink-0">
-              <svg className="w-6 h-6" fill="none" stroke={branding.primaryColor} strokeWidth={1.5} viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke={`var(--brand-primary, ${branding.primaryColor})`} strokeWidth={1.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
               </svg>
               {unreadCount > 0 && (
@@ -427,7 +428,7 @@ export default function HomePage() {
               ) : (
                 <div
                   className="h-20 w-20 rounded-full text-white flex items-center justify-center text-2xl font-bold shadow-sm"
-                  style={{ backgroundColor: branding.primaryColor }}
+                  style={{ backgroundColor: `var(--brand-primary, ${branding.primaryColor})` }}
                 >
                   {initials}
                 </div>
