@@ -67,6 +67,33 @@ if ('serviceWorker' in navigator) {
     }
   } catch(e) {}
 
+  // ── Pre-fetch branding from API before React mounts ──
+  // This runs in the background; React will pick up the result from localStorage.
+  // On cold starts the SW may throttle /api/* requests with a 10 s timeout,
+  // but the /client/company route is configured as NetworkOnly (no timeout).
+  (function prefetchBranding() {
+    var token = localStorage.getItem('accessToken');
+    if (!token) return;
+    var apiBase = '${process.env.NEXT_PUBLIC_API_URL}';
+    fetch(apiBase + '/client/company', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(data) {
+      if (!data || !data.primaryColor) return;
+      document.documentElement.style.setProperty('--brand-primary', data.primaryColor);
+      document.documentElement.style.setProperty('--brand-secondary', data.secondaryColor);
+      document.documentElement.style.setProperty(
+        '--brand-bg-image',
+        data.backgroundImageUrl ? 'url(' + data.backgroundImageUrl + ')' : 'none'
+      );
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', data.primaryColor);
+      localStorage.setItem('studioBranding', JSON.stringify(data));
+    })
+    .catch(function() {});
+  })();
+
   // ── BroadcastChannel (most reliable SW ⇄ main thread messaging) ──
   if ('BroadcastChannel' in window) {
     var bc = new BroadcastChannel('studio-push');

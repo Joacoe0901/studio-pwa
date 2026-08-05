@@ -7,8 +7,24 @@ const withPWA = withPWAInit({
   reloadOnOnline: true,
   disable: process.env.NODE_ENV === "development",
   customWorkerSrc: "lib/sw",
+  extendDefaultRuntimeCaching: true,
   workboxOptions: {
     disableDevLogs: true,
+    runtimeCaching: [
+      {
+        // Branding API must never be timed out by the SW — cold backends
+        // can take 15-30 s to respond. Registered BEFORE the generic /api/*
+        // NetworkFirst route so it takes precedence.
+        urlPattern: ({ url, sameOrigin }) =>
+          sameOrigin &&
+          url.pathname.startsWith("/api/") &&
+          url.pathname.includes("/client/company"),
+        handler: "NetworkOnly",
+        options: {
+          cacheName: "branding-api",
+        },
+      },
+    ],
   },
 });
 

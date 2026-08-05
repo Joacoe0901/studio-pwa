@@ -378,12 +378,7 @@ export default function HomePage() {
       {/* Hero section — capped height */}
       <div className="flex-shrink-0 px-4 pt-3">
         <div
-          className="w-full h-[clamp(90px,17dvh,180px)] rounded-2xl overflow-hidden bg-cover bg-center"
-          style={
-            branding.backgroundImageUrl
-              ? { backgroundImage: `url(${branding.backgroundImageUrl})` }
-              : { background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})` }
-          }
+          className="w-full h-[clamp(90px,17dvh,180px)] rounded-2xl overflow-hidden [background:var(--brand-bg-image)_center/cover,linear-gradient(135deg,var(--brand-primary),var(--brand-secondary))]"
         />
       </div>
 
