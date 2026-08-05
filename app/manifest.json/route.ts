@@ -9,7 +9,7 @@ export async function GET() {
         const data = await res.json();
 
         const studioName = data.studioName || "Andes Pilates";
-        const primaryColor = data.primaryColor || "#4A7C59";
+        const primaryColor = data.primaryColor || "#6B7280";
         const appIconUrl = data.appIconUrl || "/icons/icon-512.png";
 
         const manifest = {
@@ -40,7 +40,7 @@ export async function GET() {
                 start_url: "/",
                 display: "standalone",
                 background_color: "#FFFFFF",
-                theme_color: "#4A7C59",
+                theme_color: "#6B7280",
                 orientation: "portrait",
                 icons: [
                     { src: "/andes_logo_pwa.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },

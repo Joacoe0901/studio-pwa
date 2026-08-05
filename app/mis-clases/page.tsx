@@ -59,13 +59,13 @@ export default function MisClasesPage() {
     const [allReservations, setAllReservations] = useState<Reservation[]>([]);
     const [loading, setLoading] = useState(true);
     const [cancelling, setCancelling] = useState<number | null>(null);
-    const [primaryColor, setPrimaryColor] = useState("#4A7C59");
+    const [primaryColor, setPrimaryColor] = useState("#6B7280");
     const [confirmCancel, setConfirmCancel] = useState<Reservation | null>(null);
     const [cancelPreview, setCancelPreview] = useState<{ message: string; tone: "danger" | "warning" | "info" } | null>(null);
 
     useEffect(() => {
         apiFetch<{ primaryColor: string }>("/client/company")
-            .then((d) => setPrimaryColor(d.primaryColor || "#4A7C59"))
+            .then((d) => setPrimaryColor(d.primaryColor || "#6B7280"))
             .catch(() => {});
     }, []);
 

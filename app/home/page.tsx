@@ -151,15 +151,20 @@ export default function HomePage() {
     let cancelled = false;
     const pendingTimeouts = new Set<ReturnType<typeof setTimeout>>();
 
-    /* Fetch and apply studio branding, with aggressive retry. */
+    /* ── Step 1: Apply cached branding immediately (sync, sub‑ms) ──────── */
+    const cached = getCachedBranding();
+    if (cached && cached.primaryColor && cached.secondaryColor) {
+      setBranding(cached);
+      brandingLoadedRef.current = true;
+    }
+
+    /* ── Step 2: Fetch fresh branding from API (async, with retries) ──── */
     const loadBranding = (retries = 0) => {
-      // Don't bother if the inline script already updated branding.
-      if (cancelled || brandingLoadedRef.current) return;
+      if (cancelled) return;
 
       apiFetch<StudioBranding>("/client/company")
         .then((data) => {
           if (cancelled) return;
-          // Only apply if the API returned valid colours.
           if (data && data.primaryColor && data.secondaryColor) {
             brandingLoadedRef.current = true;
             setBranding(data);
@@ -175,10 +180,22 @@ export default function HomePage() {
               if (meta) meta.setAttribute("content", data.primaryColor);
             }
           } else if (retries < 12) {
-            // Empty response — server may be cold, retry with exponential backoff.
             const delay = Math.min(1000 * Math.pow(1.5, retries), 30000);
             const id = setTimeout(() => loadBranding(retries + 1), delay);
             pendingTimeouts.add(id);
+          } else {
+            // After all retries exhausted, ensure we have at least defaults
+            if (!brandingLoadedRef.current) {
+              brandingLoadedRef.current = true;
+              const d = getCachedBranding();
+              setBranding({
+                studioName: d.studioName,
+                primaryColor: d.primaryColor,
+                secondaryColor: d.secondaryColor,
+                backgroundImageUrl: d.backgroundImageUrl,
+                logoUrl: d.logoUrl,
+              });
+            }
           }
         })
         .catch((err) => {
@@ -188,28 +205,28 @@ export default function HomePage() {
             const delay = Math.min(1000 * Math.pow(1.5, retries), 30000);
             const id = setTimeout(() => loadBranding(retries + 1), delay);
             pendingTimeouts.add(id);
+          } else {
+            // Final fallback to defaults after retries exhausted
+            if (!brandingLoadedRef.current) {
+              brandingLoadedRef.current = true;
+              const d = getCachedBranding();
+              setBranding({
+                studioName: d.studioName,
+                primaryColor: d.primaryColor,
+                secondaryColor: d.secondaryColor,
+                backgroundImageUrl: d.backgroundImageUrl,
+                logoUrl: d.logoUrl,
+              });
+            }
           }
         });
     };
     loadBranding();
 
-    /* Listen for branding-updated event from the layout inline script.
-       The script runs before React and keeps retrying until it succeeds.
-       This ensures branding is applied even if the component's own fetch hasn't
-       completed yet. */
-    const handleBrandingUpdated = (e: Event) => {
-      if (cancelled) return;
-      const detail = (e as CustomEvent).detail as StudioBranding;
-      if (detail && detail.primaryColor && detail.secondaryColor) {
-        brandingLoadedRef.current = true;
-        setBranding(detail);
-      }
-    };
-    window.addEventListener("branding-updated", handleBrandingUpdated);
-
+    /* ── Step 3: Fetch profile and notifications ──────────────────────── */
     apiFetch<ClientProfile>("/client/me")
       .then((data) => { if (!cancelled) setProfile(data); })
-      .catch(() => { });
+      .catch(() => {});
 
     loadNotifications();
 
@@ -217,7 +234,6 @@ export default function HomePage() {
       cancelled = true;
       pendingTimeouts.forEach(clearTimeout);
       pendingTimeouts.clear();
-      window.removeEventListener("branding-updated", handleBrandingUpdated);
     };
   }, [router, loadNotifications]);
 
@@ -377,7 +393,7 @@ export default function HomePage() {
         <button
           onClick={() => router.push(primaryCard.href)}
           className="flex-shrink-0 w-full relative rounded-2xl py-[clamp(14px,2.2dvh,34px)] px-6 text-left active:scale-[0.98] transition-transform mb-[clamp(8px,1.5dvh,12px)]"
-          style={{ backgroundColor: branding.secondaryColor, boxShadow: "0 4px 16px rgba(74,124,89,0.10)" }}
+          style={{ backgroundColor: branding.secondaryColor, boxShadow: `0 4px 16px ${branding.primaryColor}18` }}
         >
           <div className="flex items-center gap-4">
             <div

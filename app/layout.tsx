@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#4A7C59",
+  themeColor: "#6B7280",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -66,48 +66,6 @@ if ('serviceWorker' in navigator) {
       }
     }
   } catch(e) {}
-
-  // ── Fetch fresh branding from API in background (aggressive retry) ──
-  // Runs in parallel with React — never gives up, keeps retrying with
-  // exponential backoff. On success updates localStorage + CSS vars and
-  // dispatches 'branding-updated' so React components can refresh.
-  window.__API_URL = '${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1"}';
-  (function fetchBranding(attempt) {
-    attempt = attempt || 0;
-    var token = localStorage.getItem('accessToken');
-    if (!token) {
-      if (attempt < 12) setTimeout(function() { fetchBranding(attempt + 1); }, Math.min(1000 * Math.pow(1.5, attempt), 30000));
-      return;
-    }
-    var apiUrl = window.__API_URL || (window.location.origin + '/api/v1');
-    fetch(apiUrl + '/client/company', { headers: { Authorization: 'Bearer ' + token } })
-      .then(function(r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
-      .then(function(data) {
-        if (data && data.primaryColor && data.secondaryColor) {
-          var branding = {};
-          try { var c = JSON.parse(localStorage.getItem('studioBranding')); if (c) branding = c; } catch(e) {}
-          Object.keys(data).forEach(function(k) { branding[k] = data[k]; });
-          localStorage.setItem('studioBranding', JSON.stringify(branding));
-          document.documentElement.style.setProperty('--brand-primary', data.primaryColor);
-          document.documentElement.style.setProperty('--brand-secondary', data.secondaryColor);
-          document.documentElement.style.setProperty(
-            '--brand-bg-image',
-            data.backgroundImageUrl ? 'url(' + data.backgroundImageUrl + ')' : 'none'
-          );
-          var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute('content', data.primaryColor);
-          window.dispatchEvent(new CustomEvent('branding-updated', { detail: branding }));
-        } else if (attempt < 12) {
-          setTimeout(function() { fetchBranding(attempt + 1); }, Math.min(1000 * Math.pow(1.5, attempt), 30000));
-        }
-      })
-      .catch(function() {
-        if (attempt < 12) setTimeout(function() { fetchBranding(attempt + 1); }, Math.min(1000 * Math.pow(1.5, attempt), 30000));
-      });
-  })();
 
   // ── BroadcastChannel (most reliable SW ⇄ main thread messaging) ──
   if ('BroadcastChannel' in window) {

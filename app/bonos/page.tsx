@@ -130,11 +130,11 @@ export default function BonosPage() {
     const router = useRouter();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
-    const [primaryColor, setPrimaryColor] = useState("#4A7C59");
+    const [primaryColor, setPrimaryColor] = useState("#6B7280");
 
     useEffect(() => {
         apiFetch<{ primaryColor: string }>("/client/company")
-            .then((d) => setPrimaryColor(d.primaryColor || "#4A7C59"))
+            .then((d) => setPrimaryColor(d.primaryColor || "#6B7280"))
             .catch(() => {});
     }, []);
 

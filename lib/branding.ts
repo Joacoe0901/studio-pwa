@@ -11,8 +11,8 @@ export interface CachedBranding {
 function getDefaultBranding(): CachedBranding {
   return {
     studioName: "Andes Pilates",
-    primaryColor: "#4A7C59",
-    secondaryColor: "#3d6a4a",
+    primaryColor: "#6B7280",
+    secondaryColor: "#9CA3AF",
     backgroundImageUrl: "",
     logoUrl: "",
   };

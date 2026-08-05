@@ -36,7 +36,7 @@ export default function PerfilPage() {
     const [country, setCountry] = useState("");
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState("");
-    const [primaryColor, setPrimaryColor] = useState("#4A7C59");
+    const [primaryColor, setPrimaryColor] = useState("#6B7280");
     const [photoMenu, setPhotoMenu] = useState(false);
     const [viewPhoto, setViewPhoto] = useState(false);
     const [photoUrl, setPhotoUrl] = useState("");
@@ -44,7 +44,7 @@ export default function PerfilPage() {
 
     useEffect(() => {
         apiFetch<{ primaryColor: string }>("/client/company")
-            .then((d) => setPrimaryColor(d.primaryColor || "#4A7C59"))
+            .then((d) => setPrimaryColor(d.primaryColor || "#6B7280"))
             .catch(() => {});
     }, []);
 
