@@ -161,7 +161,7 @@ export default function MisClasesPage() {
                                         <button
                                             onClick={() => handleCancelClick(r)}
                                             disabled={cancelling === r.enrollmentId}
-                                            className="text-xs text-red-500 font-medium px-3 py-1 rounded-lg border border-red-200 hover:bg-red-50 disabled:opacity-50"
+                                            className="text-red-600 font-medium px-4 py-2 rounded-xl border border-red-200 hover:bg-red-50 active:scale-[0.98] transition-all disabled:opacity-50"
                                         >
                                             {cancelling === r.enrollmentId ? "..." : "Cancelar"}
                                         </button>
