@@ -10,7 +10,7 @@ export async function GET() {
 
         const studioName = data.studioName || "Andes Pilates";
         const primaryColor = data.primaryColor || "#53593D";
-        const appIconUrl = data.appIconUrl || "/icons/icon-512.png";
+        const appIconUrl = data.appIconUrl || "/api/v1/app-icon";
 
         const manifest = {
             name: studioName,
