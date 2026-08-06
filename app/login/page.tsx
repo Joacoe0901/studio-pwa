@@ -162,7 +162,6 @@ export default function LoginPage() {
               Acepto los{" "}
               <Link
                 href="/terminos"
-                target="_blank"
                 className="text-brand-600 underline hover:text-brand-700"
               >
                 Términos y Condiciones

@@ -6,6 +6,7 @@ export interface CachedBranding {
   secondaryColor: string;
   backgroundImageUrl: string;
   logoUrl: string;
+  termsText: string;
 }
 
 function getDefaultBranding(): CachedBranding {
@@ -15,6 +16,7 @@ function getDefaultBranding(): CachedBranding {
     secondaryColor: "#E8E7E6",
     backgroundImageUrl: "",
     logoUrl: "",
+    termsText: "",
   };
 }
 

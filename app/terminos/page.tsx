@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { getCachedBranding } from "@/lib/branding";
 
 interface CompanyInfo {
     termsText: string;
@@ -19,7 +20,19 @@ export default function TerminosPage() {
     useEffect(() => {
         apiFetch<CompanyInfo>("/client/company")
             .then(setInfo)
-            .catch(() => { })
+            .catch(() => {
+                // Fallback: read cached branding from localStorage (available after first login)
+                try {
+                    const cached = getCachedBranding();
+                    if (cached.termsText) {
+                        setInfo({
+                            termsText: cached.termsText,
+                            studioName: cached.studioName,
+                            primaryColor: cached.primaryColor,
+                        });
+                    }
+                } catch { /* ignore */ }
+            })
             .finally(() => setLoading(false));
     }, []);
 
