@@ -85,11 +85,19 @@ export default function ClassCard({
       "text-red-600 font-medium px-4 py-2 rounded-xl border border-red-200 hover:bg-red-50 active:scale-[0.98] transition-all";
     buttonAction = () => onCancel(session);
     buttonDisabled = loading;
-  } else if (session.waitlisted) {
+  } else if (session.waitlisted && isFull) {
+    // Still full — keep waiting, allow leaving waitlist
     buttonLabel = "EN ESPERA ✕";
     buttonClass =
       "bg-amber-500 text-white font-medium px-5 py-2 rounded-xl hover:bg-amber-600 active:scale-[0.98] transition-all shadow-sm";
     buttonAction = () => onCancel(session); // cancel waitlist
+    buttonDisabled = loading;
+  } else if (session.waitlisted && !isFull) {
+    // Spot freed up! Let the waitlisted customer book it.
+    buttonLabel = "RESERVAR";
+    buttonClass =
+      "bg-brand-500 text-white font-medium px-5 py-2 rounded-xl hover:bg-brand-600 active:scale-[0.98] transition-all shadow-sm";
+    buttonAction = () => onReserve(session);
     buttonDisabled = loading;
   } else if (isFull) {
     if (isOutsideWindow) {
