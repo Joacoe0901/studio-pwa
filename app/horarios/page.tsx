@@ -257,6 +257,7 @@ export default function HorariosPage() {
                                 })}
                             </div>
                         </div>
+                    </div>
                 )}
             </main>
         </div>
