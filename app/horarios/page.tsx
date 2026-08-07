@@ -52,6 +52,18 @@ function formatDuration(minutes: number): string {
     return `${h}h ${m}min`;
 }
 
+/** Aclara un hex color mezclándolo con blanco (factor 0→original, 1→blanco). */
+function lightenHex(hex: string, factor: number): string {
+    const c = hex.replace("#", "");
+    const r = parseInt(c.substring(0, 2), 16);
+    const g = parseInt(c.substring(2, 4), 16);
+    const b = parseInt(c.substring(4, 6), 16);
+    const lr = Math.round(r + (255 - r) * factor);
+    const lg = Math.round(g + (255 - g) * factor);
+    const lb = Math.round(b + (255 - b) * factor);
+    return `#${lr.toString(16).padStart(2, "0")}${lg.toString(16).padStart(2, "0")}${lb.toString(16).padStart(2, "0")}`;
+}
+
 export default function HorariosPage() {
     const router = useRouter();
     const [slots, setSlots] = useState<ScheduleSlot[]>([]);
@@ -111,6 +123,8 @@ export default function HorariosPage() {
         if (daySlots.length === 0) return 60;
         return Math.max(...daySlots.map((s) => durationMinutes(s.timeStart, s.timeEnd)));
     }, [daySlots]);
+
+    const lightColor = useMemo(() => lightenHex(primaryColor, 0.82), [primaryColor]);
 
     return (
         <div className="h-dvh bg-white flex flex-col overflow-hidden">
@@ -177,14 +191,14 @@ export default function HorariosPage() {
                         {/* Day header */}
                         <div className="flex items-center gap-3">
                             <h2 className="text-base font-bold text-gray-900">{selectedDay}</h2>
-                            <div className="h-px flex-1 bg-gray-100" />
+                            <div className="h-px flex-1 rounded-full" style={{ backgroundColor: lightColor }} />
                             <span className="text-xs text-gray-400">{daySlots.length} {daySlots.length === 1 ? "clase" : "clases"}</span>
                         </div>
 
                         {/* Timeline */}
                         <div className="relative pl-8">
                             {/* Vertical line */}
-                            <div className="absolute left-[14px] top-2 bottom-2 w-0.5 bg-gray-100 rounded-full" />
+                            <div className="absolute left-[14px] top-2 bottom-2 w-0.5 rounded-full" style={{ backgroundColor: lightColor }} />
 
                             <div className="space-y-6">
                                 {daySlots.map((s, i) => {
@@ -224,7 +238,7 @@ export default function HorariosPage() {
                                                                 )}
                                                             </div>
                                                             <div className="flex-shrink-0 mt-1">
-                                                                <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                                <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: lightColor }}>
                                                                     <div
                                                                         className="h-full rounded-full transition-all duration-500"
                                                                         style={{
@@ -243,18 +257,6 @@ export default function HorariosPage() {
                                 })}
                             </div>
                         </div>
-
-                        {/* CTA */}
-                        <div className="pt-2 pb-6">
-                            <button
-                                onClick={() => router.push("/reservar")}
-                                className="w-full py-3.5 rounded-xl text-white font-semibold text-sm active:scale-[0.98] transition-all shadow-sm"
-                                style={{ backgroundColor: primaryColor }}
-                            >
-                                Reservar Clase
-                            </button>
-                        </div>
-                    </div>
                 )}
             </main>
         </div>
