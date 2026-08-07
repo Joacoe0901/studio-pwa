@@ -118,13 +118,9 @@ export default function HorariosPage() {
 
     const daySlots = selectedDay ? grouped[selectedDay] ?? [] : [];
 
-    /* ─── Encontrar la duración máxima del día para la barra proporcional ─ */
-    const maxDuration = useMemo(() => {
-        if (daySlots.length === 0) return 60;
-        return Math.max(...daySlots.map((s) => durationMinutes(s.timeStart, s.timeEnd)));
-    }, [daySlots]);
 
     const lightColor = useMemo(() => lightenHex(primaryColor, 0.82), [primaryColor]);
+    const slotAccentColor = useMemo(() => lightenHex(primaryColor, 0.4), [primaryColor]);
 
     return (
         <div className="h-dvh bg-white flex flex-col overflow-hidden">
@@ -203,13 +199,11 @@ export default function HorariosPage() {
                             <div className="space-y-6">
                                 {daySlots.map((s, i) => {
                                     const dur = durationMinutes(s.timeStart, s.timeEnd);
-                                    const barWidth = Math.max((dur / maxDuration) * 100, 15);
-                                    const slotColor = s.color || primaryColor;
 
                                     return (
                                         <div key={i} className="relative">
                                             {/* Timeline dot */}
-                                            <div className="absolute left-[-29px] top-1.5 w-3 h-3 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: slotColor }} />
+                                            <div className="absolute left-[-29px] top-1.5 w-3 h-3 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: slotAccentColor }} />
 
                                             {/* Time label */}
                                             <div className="flex items-baseline gap-2 mb-2">
@@ -223,7 +217,7 @@ export default function HorariosPage() {
                                                 <div className="flex">
                                                     <div
                                                         className="flex-shrink-0 w-1 self-stretch rounded-l-xl"
-                                                        style={{ backgroundColor: slotColor }}
+                                                        style={{ backgroundColor: slotAccentColor }}
                                                     />
                                                     <div className="flex-1 px-4 py-3">
                                                         <div className="flex items-start justify-between gap-3">
@@ -236,17 +230,6 @@ export default function HorariosPage() {
                                                                         con {s.instructor}
                                                                     </p>
                                                                 )}
-                                                            </div>
-                                                            <div className="flex-shrink-0 mt-1">
-                                                                <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: lightColor }}>
-                                                                    <div
-                                                                        className="h-full rounded-full transition-all duration-500"
-                                                                        style={{
-                                                                            width: `${barWidth}%`,
-                                                                            backgroundColor: slotColor,
-                                                                        }}
-                                                                    />
-                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
