@@ -8,6 +8,8 @@ interface Notification {
   body: string;
   createdAt: string;
   read: boolean;
+  type?: string;
+  sessionId?: number;
 }
 
 interface NotificationsBottomSheetProps {

@@ -6,6 +6,7 @@ import { apiFetch, clearToken, getAccessToken, resolveUploadUrl, checkAccessStat
 import { getCachedBranding, setCachedBranding, type CachedBranding } from "@/lib/branding";
 import NotificationsBottomSheet from "@/components/NotificationsBottomSheet";
 import NotificationDetailModal from "@/components/NotificationDetailModal";
+import SpotFreedModal from "@/components/SpotFreedModal";
 import { isPushSupported, getNotificationPermission, subscribeToPush, unsubscribeFromPush, isSubscribed, checkSubscription } from "@/lib/push";
 
 interface StudioBranding {
@@ -32,6 +33,8 @@ interface Notification {
   body: string;
   createdAt: string;
   read: boolean;
+  type?: string;
+  sessionId?: number;
 }
 
 interface GridCard {
@@ -122,6 +125,12 @@ export default function HomePage() {
   const [badgeAnimating, setBadgeAnimating] = useState(false);
   const prevUnreadRef = useRef<number>(0);
 
+  /* ─── Spot freed modal state ──────────────────────────────────────────── */
+  const [spotFreedModal, setSpotFreedModal] = useState<{
+    notificationId: number;
+    session: { id: number; serviceName: string; instructor: string; startDateTime: string; endDateTime: string };
+  } | null>(null);
+
   /* ─── Push notifications state ──────────────────────────────────────────── */
   const [pushSupported, setPushSupported] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -182,15 +191,109 @@ export default function HomePage() {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const loadNotifications = useCallback(() => {
-    apiFetch<Notification[]>("/client/notifications")
-      .then((data) => setNotifications(data))
-      .catch(() => { });
-  }, []);
-
   const markRead = useCallback((id: number) => {
     apiFetch(`/client/notifications/${id}/read`, { method: "POST" }).catch(() => { });
   }, []);
+
+  /* ─── Spot freed notification check ──────────────────────────────────── */
+  const checkSpotFreedNotifications = useCallback((notifs: Notification[]) => {
+    if (spotFreedModal) return; // already showing one
+    const spotFreed = notifs.find(
+      (n) => !n.read && n.type === "SPOT_FREED" && n.sessionId
+    );
+    if (!spotFreed) return;
+
+    // Fetch session details
+    apiFetch<{
+      id: number;
+      serviceName: string;
+      instructor: string;
+      startDateTime: string;
+      endDateTime: string;
+    }>(`/client/sessions/${spotFreed.sessionId}`)
+      .then((session) => {
+        // Only show if the session is still in the future
+        if (new Date(session.endDateTime).getTime() <= Date.now()) {
+          // Session already passed, mark notification as read
+          markRead(spotFreed.id);
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === spotFreed.id ? { ...n, read: true } : n))
+          );
+          return;
+        }
+        setSpotFreedModal({
+          notificationId: spotFreed.id,
+          session: {
+            id: session.id,
+            serviceName: session.serviceName,
+            instructor: session.instructor,
+            startDateTime: session.startDateTime,
+            endDateTime: session.endDateTime,
+          },
+        });
+      })
+      .catch(() => {
+        // If session fetch fails (e.g. session deleted), mark as read
+        markRead(spotFreed.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === spotFreed.id ? { ...n, read: true } : n))
+        );
+      });
+  }, [spotFreedModal, markRead]);
+
+  const handleSpotFreedDismiss = useCallback(() => {
+    if (!spotFreedModal) return;
+    const notifId = spotFreedModal.notificationId;
+    markRead(notifId);
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notifId ? { ...n, read: true } : n))
+    );
+    setSpotFreedModal(null);
+    // Check if there's another SPOT_FREED notification
+    setNotifications((prev) => {
+      const nextSpot = prev.find(
+        (n) => !n.read && n.type === "SPOT_FREED" && n.sessionId && n.id !== notifId
+      );
+      if (nextSpot) {
+        setTimeout(() => checkSpotFreedNotifications(prev), 300);
+      }
+      return prev;
+    });
+  }, [spotFreedModal, markRead, checkSpotFreedNotifications]);
+
+  const handleSpotFreedBook = useCallback(async (): Promise<string | null> => {
+    if (!spotFreedModal) return null;
+    try {
+      await apiFetch("/client/reservations", {
+        method: "POST",
+        body: JSON.stringify({ sessionId: spotFreedModal.session.id }),
+      });
+      // Success
+      markRead(spotFreedModal.notificationId);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === spotFreedModal.notificationId ? { ...n, read: true } : n
+        )
+      );
+      return null;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error al reservar";
+      if (msg === "VOUCHER_LIMIT_REACHED") {
+        return "No tienes clases disponibles en tu bono para reservar esta clase.";
+      }
+      return msg || "No se pudo completar la reserva. La clase puede estar llena.";
+    }
+  }, [spotFreedModal, markRead]);
+
+  const loadNotifications = useCallback(() => {
+    apiFetch<Notification[]>("/client/notifications")
+      .then((data) => {
+        setNotifications(data);
+        // Check for spot freed notifications after loading
+        checkSpotFreedNotifications(data);
+      })
+      .catch(() => { });
+  }, [checkSpotFreedNotifications]);
 
   /* ─── Trigger badge animation on count change ──────────────────────────── */
   useEffect(() => {
@@ -696,6 +799,16 @@ export default function HomePage() {
         <NotificationDetailModal
           notification={detailNotification}
           onClose={handleCloseDetail}
+        />
+      )}
+
+      {/* ─── Spot Freed Modal ──────────────────────────────────────────── */}
+      {spotFreedModal && (
+        <SpotFreedModal
+          session={spotFreedModal.session}
+          onBook={handleSpotFreedBook}
+          onDismiss={handleSpotFreedDismiss}
+          primaryColor={branding.primaryColor}
         />
       )}
 
