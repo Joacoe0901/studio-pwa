@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getPublicLegalContent, recordAcceptance, checkAccessStatus } from "@/lib/api";
+import { getPublicLegalContent, recordAcceptance } from "@/lib/api";
 
 export default function ComunicacionesPage() {
     const router = useRouter();
@@ -13,38 +13,20 @@ export default function ComunicacionesPage() {
         primaryColor: string;
     } | null>(null);
     const [loading, setLoading] = useState(true);
-    const [accepted, setAccepted] = useState<boolean | null>(null);
+    const [accepted, setAccepted] = useState(false);
     const [saving, setSaving] = useState(false);
     const primaryColor = info?.primaryColor || "#53593D";
 
     useEffect(() => {
         async function load() {
             try {
-                // Fetch public content + versionId
                 const data = await getPublicLegalContent("MARKETING_COMMUNICATIONS");
-                const versionId = data.versionId ?? 0;
-
-                // Check if client already accepted
-                let alreadyAccepted = false;
-                if (versionId > 0) {
-                    try {
-                        const status = await checkAccessStatus();
-                        const pending = status.pendingDocuments ?? [];
-                        alreadyAccepted = !pending.some(
-                            (d) => d.documentType === "MARKETING_COMMUNICATIONS"
-                        );
-                    } catch {
-                        // ignore, default to unchecked
-                    }
-                }
-
                 setInfo({
                     content: data.content,
-                    versionId,
+                    versionId: data.versionId ?? 0,
                     studioName: "Andes Pilates",
                     primaryColor: "#53593D",
                 });
-                setAccepted(alreadyAccepted);
             } catch {
                 // ignore
             } finally {
@@ -104,11 +86,11 @@ export default function ComunicacionesPage() {
 
                 {/* Marketing acceptance checkbox — at the bottom */}
                 {!loading && info?.versionId && info.versionId > 0 && (
-                    <div className="flex-shrink-0 border-t border-gray-100 px-6 py-4 bg-gray-50">
+                    <div className="flex-shrink-0 border-t border-gray-100 px-6 pt-5 pb-8 bg-gray-50">
                         <label className="flex items-start gap-3 cursor-pointer select-none">
                             <input
                                 type="checkbox"
-                                checked={accepted ?? false}
+                                checked={accepted}
                                 disabled={saving}
                                 onChange={(e) => handleToggleMarketing(e.target.checked)}
                                 className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 flex-shrink-0"
