@@ -633,7 +633,7 @@ export default function HomePage() {
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
                   </svg>
-                  <span>{item.label}</span>
+                  <span className="text-left">{item.label}</span>
                 </button>
               ))}
             </nav>

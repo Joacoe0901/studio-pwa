@@ -269,7 +269,7 @@ export async function recordAcceptance(versionId: number, accepted: boolean): Pr
   });
 }
 
-export async function getPublicLegalContent(docType: string): Promise<{ type: string; content: string }> {
+export async function getPublicLegalContent(docType: string): Promise<{ type: string; content: string; versionId?: number }> {
   const token = getAccessToken();
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
