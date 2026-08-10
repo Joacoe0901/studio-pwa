@@ -232,6 +232,52 @@ export async function loginWithCode(code: string): Promise<LoginCodeResponse> {
   return data;
 }
 
+// ─── Legal documents (acceptance flow) ─────────────────────────────────────
+
+export interface PendingDocument {
+  documentType: string;
+  versionId: number;
+  version: string;
+  required: boolean;
+  content: string;
+}
+
+export interface AccessStatusResponse {
+  canAccess: boolean;
+  requiresAcceptance: boolean;
+  pendingDocuments: PendingDocument[];
+}
+
+export interface PendingDocumentsResponse {
+  pending: PendingDocument[];
+}
+
+// ─── Legal document acceptance ──────────────────────────────────────────────
+
+export async function checkAccessStatus(): Promise<AccessStatusResponse> {
+  return apiFetch<AccessStatusResponse>("/client/access-status", { method: "GET" });
+}
+
+export async function getPendingDocuments(): Promise<PendingDocumentsResponse> {
+  return apiFetch<PendingDocumentsResponse>("/client/legal-documents", { method: "GET" });
+}
+
+export async function recordAcceptance(versionId: number, accepted: boolean): Promise<{ id: number; versionId: number; accepted: boolean; acceptedAt: string }> {
+  return apiFetch("/client/legal-acceptances", {
+    method: "POST",
+    body: JSON.stringify({ versionId, accepted }),
+  });
+}
+
+export async function getPublicLegalContent(docType: string): Promise<{ type: string; content: string }> {
+  const token = getAccessToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${API_URL}/legal/public/${docType}`, { headers });
+  if (!res.ok) throw new Error("No se pudo cargar el contenido legal");
+  return res.json();
+}
+
 /** Returns the stored access token, or null if not authenticated. */
 export function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;

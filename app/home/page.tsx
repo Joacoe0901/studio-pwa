@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch, clearToken, getAccessToken, resolveUploadUrl } from "@/lib/api";
+import { apiFetch, clearToken, getAccessToken, resolveUploadUrl, checkAccessStatus, recordAcceptance } from "@/lib/api";
 import { getCachedBranding, setCachedBranding, type CachedBranding } from "@/lib/branding";
 import NotificationsBottomSheet from "@/components/NotificationsBottomSheet";
 import NotificationDetailModal from "@/components/NotificationDetailModal";
@@ -93,6 +93,11 @@ const hamburgerItems = [
     href: "/terminos",
     icon: "M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z",
   },
+  {
+    label: "Política de Privacidad",
+    href: "/privacidad",
+    icon: "M12 2.25c-5.384 0-9.75 4.366-9.75 9.75s4.366 9.75 9.75 9.75 9.75-4.366 9.75-9.75S17.384 2.25 12 2.25Zm-1.75 13.5a.75.75 0 0 1-1.5 0V10.5a.75.75 0 0 1 1.5 0v5.25Zm1.75-7.125a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z",
+  },
 ];
 
 
@@ -116,6 +121,59 @@ export default function HomePage() {
   const [pushSupported, setPushSupported] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
+
+  // ─── Legal document acceptance check ─────────────────────────────────────
+  const [accessBlocked, setAccessBlocked] = useState(false);
+  const [pendingDocs, setPendingDocs] = useState<Array<{
+    documentType: string;
+    versionId: number;
+    version: string;
+    required: boolean;
+    content: string;
+  }>>([]);
+  const [acceptingDocs, setAcceptingDocs] = useState(false);
+
+  const checkAccess = useCallback(async () => {
+    try {
+      const status = await checkAccessStatus();
+      if (!status.canAccess) {
+        setAccessBlocked(true);
+        setPendingDocs(status.pendingDocuments);
+      }
+    } catch {
+      // if api fails, let them through
+    }
+  }, []);
+
+  useEffect(() => {
+    checkAccess();
+  }, [checkAccess]);
+
+  const handleAcceptAll = async () => {
+    setAcceptingDocs(true);
+    try {
+      for (const doc of pendingDocs) {
+        await recordAcceptance(doc.versionId, true);
+      }
+      setAccessBlocked(false);
+      setPendingDocs([]);
+    } catch {
+      // retry on next mount
+    } finally {
+      setAcceptingDocs(false);
+    }
+  };
+
+  const handleRejectDoc = async (versionId: number, docType: string) => {
+    // Only reject optional docs (required docs must be accepted to access)
+    await recordAcceptance(versionId, false);
+    setPendingDocs((prev) => prev.filter((d) => d.versionId !== versionId));
+    // Re-check if any required docs remain blocking
+    const remaining = pendingDocs.filter((d) => d.versionId !== versionId);
+    if (remaining.every((d) => !d.required)) {
+      setAccessBlocked(false);
+    }
+  };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -346,6 +404,58 @@ export default function HomePage() {
   const initials = profile
     ? `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase()
     : "?";
+
+  if (accessBlocked) {
+    const docLabels: Record<string, string> = {
+      TERMS_AND_CONDITIONS: "Términos y Condiciones",
+      PRIVACY_POLICY: "Política de Privacidad",
+      MARKETING_COMMUNICATIONS: "Comunicaciones de Marketing",
+    };
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
+        <img src="/logo-sin-fondo.png" alt="Logo" className="w-[60%] max-w-[200px] h-auto mx-auto mb-8" />
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Documentos pendientes</h1>
+        <p className="text-sm text-gray-500 mb-6 text-center">
+          Para continuar, debes aceptar los siguientes documentos:
+        </p>
+        <div className="w-full max-w-md space-y-4 mb-6">
+          {pendingDocs.map((doc) => (
+            <div key={doc.versionId} className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium text-gray-900">{docLabels[doc.documentType] || doc.documentType}</h3>
+                {doc.required ? (
+                  <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Obligatorio</span>
+                ) : (
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Opcional</span>
+                )}
+              </div>
+              <div className="text-sm text-gray-600 max-h-32 overflow-y-auto whitespace-pre-line border-t pt-2">
+                {doc.content.slice(0, 500)}
+              </div>
+              {!doc.required && (
+                <button
+                  onClick={() => handleRejectDoc(doc.versionId, doc.documentType)}
+                  className="text-xs text-gray-400 hover:text-gray-600 underline"
+                >
+                  No, gracias
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={handleAcceptAll}
+          disabled={acceptingDocs}
+          className="w-full max-w-md py-4 rounded-xl text-white font-semibold text-lg
+            bg-brand-500 hover:bg-brand-600 active:bg-brand-700
+            disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150"
+          style={{ backgroundColor: branding?.primaryColor || "#53593D" }}
+        >
+          {acceptingDocs ? "Aceptando..." : "Aceptar y continuar"}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="h-dvh flex flex-col" style={{ backgroundColor: "#F9F9F9" }}>

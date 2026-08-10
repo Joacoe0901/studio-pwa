@@ -22,7 +22,7 @@ export default function LoginPage() {
   // ── Shared state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -49,7 +49,7 @@ export default function LoginPage() {
   }
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const canGoNext = isValidEmail && acceptedTerms;
+  const canGoNext = isValidEmail && acceptedLegal;
 
   // ── Step 1: Email → Validate → Next ────────────────────────────────────────
   async function handleEmailNext(e: React.FormEvent) {
@@ -147,26 +147,32 @@ export default function LoginPage() {
             aria-label="Correo electrónico"
           />
 
-          {/* Terms checkbox */}
+          {/* Legal checkbox (mandatory: Terms + Privacy) */}
           <label className="flex items-start gap-3 cursor-pointer select-none">
             <input
               type="checkbox"
-              checked={acceptedTerms}
+              checked={acceptedLegal}
               onChange={(e) => {
-                setAcceptedTerms(e.target.checked);
+                setAcceptedLegal(e.target.checked);
                 setError("");
               }}
               className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 flex-shrink-0"
             />
             <span className="text-sm text-gray-600 leading-snug">
-              Acepto los{" "}
+              He leído y acepto los{" "}
               <Link
                 href="/terminos"
                 className="text-brand-600 underline hover:text-brand-700"
               >
                 Términos y Condiciones
               </Link>{" "}
-              del estudio
+              y la{" "}
+              <Link
+                href="/privacidad"
+                className="text-brand-600 underline hover:text-brand-700"
+              >
+                Política de Privacidad
+              </Link>
             </span>
           </label>
 
