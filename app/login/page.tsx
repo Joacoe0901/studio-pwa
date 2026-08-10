@@ -23,6 +23,7 @@ export default function LoginPage() {
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [acceptedLegal, setAcceptedLegal] = useState(false);
+  const [acceptedMarketing, setAcceptedMarketing] = useState(false);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -172,6 +173,27 @@ export default function LoginPage() {
                 className="text-brand-600 underline hover:text-brand-700"
               >
                 Política de Privacidad
+              </Link>
+            </span>
+          </label>
+
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={acceptedMarketing}
+              onChange={(e) => {
+                setAcceptedMarketing(e.target.checked);
+                setError("");
+              }}
+              className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 flex-shrink-0"
+            />
+            <span className="text-sm text-gray-600 leading-snug">
+              Acepto recibir{" "}
+              <Link
+                href="/comunicaciones"
+                className="text-brand-600 underline hover:text-brand-700"
+              >
+                Comunicaciones de Marketing
               </Link>
             </span>
           </label>
