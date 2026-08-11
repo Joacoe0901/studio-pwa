@@ -36,6 +36,12 @@ interface StudioBranding {
   calendarDays: string;
 }
 
+interface HolidayResponse {
+  id: number;
+  date: string;
+  name: string;
+}
+
 /* ─── Helpers ───────────────────────────────────────────────────────────────── */
 
 function isPast(endDateTime: string): boolean {
@@ -91,6 +97,7 @@ export default function ReservarPage() {
   const [successModal, setSuccessModal] = useState<{ session: ClientBookableSession; message: string } | null>(null);
   const [message, setMessage] = useState("");
   const [customerActive, setCustomerActive] = useState(true);
+  const [holidays, setHolidays] = useState<Record<string, string>>({});
 
   /* Auth guard */
   useEffect(() => {
@@ -143,6 +150,13 @@ export default function ReservarPage() {
       const to = addDays(from, 14);
       const data = await apiFetch<ClientBookableSession[]>(`/client/sessions?from=${from}&to=${to}`);
       setSessions(data);
+      // Also load holidays for the same date range.
+      try {
+        const holidayData = await apiFetch<HolidayResponse[]>(`/client/holidays?from=${from}&to=${to}`);
+        const map: Record<string, string> = {};
+        holidayData.forEach((h) => { map[h.date] = h.name; });
+        setHolidays(map);
+      } catch { /* holidays are optional */ }
     } catch { /* handled by guard */ }
     setLoading(false);
   }, []);
@@ -282,12 +296,29 @@ export default function ReservarPage() {
             <p className="text-gray-400 text-sm">Cargando clases...</p>
           </div>
         ) : filteredSessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-            </svg>
-            <p className="text-gray-400 text-sm">No hay clases disponibles para este dia.</p>
-          </div>
+          holidays[selectedDate] ? (
+            /* Holiday card — matches ClassCard aesthetics */
+            <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-9h.008v.008H12v-.008ZM12 15h.008v.008H12V15Z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-800">Cerrado por {holidays[selectedDate]}</p>
+                  <p className="text-xs text-amber-600 mt-0.5">No hay clases este día</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+              </svg>
+              <p className="text-gray-400 text-sm">No hay clases disponibles para este dia.</p>
+            </div>
+          )
         ) : (
           filteredSessions.map((s) => (
             <ClassCard key={s.id} session={s} isPast={isPast(s.endDateTime)} isOutsideWindow={isOutsideBookingWindow(s.startDateTime)} isCustomerInactive={!customerActive} onReserve={handleReserveClick} onCancel={handleCancelClick} onWaitlist={handleWaitlistClick} loading={reserving === s.id || cancelling === s.id || joiningWaitlist === s.id} studioName={studioName} />
