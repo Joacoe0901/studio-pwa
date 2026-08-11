@@ -89,6 +89,7 @@ export default function ReservarPage() {
   const [cancelPreview, setCancelPreview] = useState<{ message: string; tone: "danger" | "warning" | "info" } | null>(null);
   const [errorModal, setErrorModal] = useState<{ session: ClientBookableSession; message: string } | null>(null);
   const [message, setMessage] = useState("");
+  const [customerActive, setCustomerActive] = useState(true);
 
   /* Auth guard */
   useEffect(() => {
@@ -96,6 +97,14 @@ export default function ReservarPage() {
       router.replace("/login");
     }
   }, [router]);
+
+  /* Load customer active status */
+  useEffect(() => {
+    if (!getAccessToken()) return;
+    apiFetch<{ active: boolean }>("/client/me")
+      .then((data) => setCustomerActive(data.active))
+      .catch(() => {});
+  }, []);
 
   /* Load primary color */
   useEffect(() => {
@@ -272,7 +281,7 @@ export default function ReservarPage() {
           </div>
         ) : (
           filteredSessions.map((s) => (
-            <ClassCard key={s.id} session={s} isPast={isPast(s.endDateTime)} isOutsideWindow={isOutsideBookingWindow(s.startDateTime)} onReserve={handleReserveClick} onCancel={handleCancelClick} onWaitlist={handleWaitlistClick} loading={reserving === s.id || cancelling === s.id || joiningWaitlist === s.id} studioName={studioName} />
+            <ClassCard key={s.id} session={s} isPast={isPast(s.endDateTime)} isOutsideWindow={isOutsideBookingWindow(s.startDateTime)} isCustomerInactive={!customerActive} onReserve={handleReserveClick} onCancel={handleCancelClick} onWaitlist={handleWaitlistClick} loading={reserving === s.id || cancelling === s.id || joiningWaitlist === s.id} studioName={studioName} />
           ))
         )}
       </main>

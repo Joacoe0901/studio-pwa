@@ -20,6 +20,7 @@ interface ClassCardProps {
   session: ClassSession;
   isPast: boolean;
   isOutsideWindow: boolean;
+  isCustomerInactive?: boolean;
   onReserve: (session: ClassSession) => void;
   onCancel: (session: ClassSession) => void;
   onWaitlist: (session: ClassSession) => void;
@@ -48,6 +49,7 @@ export default function ClassCard({
   session,
   isPast,
   isOutsideWindow,
+  isCustomerInactive,
   onReserve,
   onCancel,
   onWaitlist,
@@ -125,6 +127,25 @@ export default function ClassCard({
       "bg-brand-500 text-white font-medium px-5 py-2 rounded-xl hover:bg-brand-600 active:scale-[0.98] transition-all shadow-sm";
     buttonAction = () => onReserve(session);
     buttonDisabled = loading;
+  }
+
+  // Override: inactive customer sees all buttons disabled (gray).
+  if (isCustomerInactive && !isPast) {
+    if (session.enrolled) {
+      buttonLabel = "CANCELAR";
+    } else if (session.waitlisted && isFull) {
+      buttonLabel = "EN ESPERA";
+    } else if (session.waitlisted && !isFull) {
+      buttonLabel = "RESERVAR";
+    } else if (isFull) {
+      buttonLabel = "EN LISTA";
+    } else {
+      buttonLabel = "RESERVAR";
+    }
+    buttonClass =
+      "text-gray-400 font-medium px-4 py-2 rounded-xl border border-gray-200 cursor-not-allowed text-xs";
+    buttonDisabled = true;
+    buttonAction = () => {};
   }
 
   return (
