@@ -88,6 +88,7 @@ export default function ReservarPage() {
   const [confirmWaitlist, setConfirmWaitlist] = useState<ClientBookableSession | null>(null);
   const [cancelPreview, setCancelPreview] = useState<{ message: string; tone: "danger" | "warning" | "info" } | null>(null);
   const [errorModal, setErrorModal] = useState<{ session: ClientBookableSession; message: string } | null>(null);
+  const [successModal, setSuccessModal] = useState<{ session: ClientBookableSession; message: string } | null>(null);
   const [message, setMessage] = useState("");
   const [customerActive, setCustomerActive] = useState(true);
 
@@ -187,19 +188,27 @@ export default function ReservarPage() {
     setReserving(session.id);
     try {
       await apiFetch("/client/reservations", { method: "POST", body: JSON.stringify({ sessionId: session.id }) });
-      setMessage("Reserva realizada con exito!");
       setConfirmReserve(null);
+      setSuccessModal({ session, message: "¡Reserva realizada con éxito!" });
       await loadSessions();
     } catch (err: unknown) {
       const code = err instanceof Error ? err.message : "";
+      setConfirmReserve(null);
       if (code === "VOUCHER_LIMIT_REACHED") {
-        setConfirmReserve(null);
         setErrorModal({
           session,
           message: "No tienes clases disponibles en tu bono para reservar esta clase.",
         });
+      } else if (code === "NO_ACTIVE_PLAN") {
+        setErrorModal({
+          session,
+          message: "No puede reservar esta clase, no tiene un bono activo.",
+        });
       } else {
-        setMessage(code || "Error al reservar");
+        setErrorModal({
+          session,
+          message: code || "Error al reservar",
+        });
       }
     }
     setReserving(null);
@@ -301,6 +310,15 @@ export default function ReservarPage() {
           title="No hay clases disponibles"
           message={errorModal.message}
           onClose={() => setErrorModal(null)}
+          primaryColor={primaryColor}
+        />
+      )}
+      {successModal && (
+        <ConfirmationModal
+          type="success"
+          session={successModal.session}
+          message={successModal.message}
+          onClose={() => setSuccessModal(null)}
           primaryColor={primaryColor}
         />
       )}
