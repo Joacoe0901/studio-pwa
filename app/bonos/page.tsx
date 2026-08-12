@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, getAccessToken } from "@/lib/api";
 
@@ -17,6 +17,7 @@ interface Voucher {
     recoveriesMax?: number;
     expirationDate: string;
     status: string;
+    periodYear: number;
     periodMonth: number;
 }
 
@@ -131,6 +132,22 @@ export default function BonosPage() {
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
     const [primaryColor, setPrimaryColor] = useState("#53593D");
+    const [filter, setFilter] = useState<"ACTIVE" | "ALL">("ACTIVE");
+
+    // Filter + order. "ACTIVE" shows only active vouchers; "ALL" shows everything
+    // with active ones first and the rest sorted descending by period (year → month).
+    const visibleVouchers = useMemo(() => {
+        if (filter === "ACTIVE") {
+            return vouchers.filter((v) => v.status === "ACTIVE");
+        }
+        const byPeriodDesc = (a: Voucher, b: Voucher) => {
+            if (a.periodYear !== b.periodYear) return b.periodYear - a.periodYear;
+            return b.periodMonth - a.periodMonth;
+        };
+        const active = vouchers.filter((v) => v.status === "ACTIVE").sort(byPeriodDesc);
+        const inactive = vouchers.filter((v) => v.status !== "ACTIVE").sort(byPeriodDesc);
+        return [...active, ...inactive];
+    }, [vouchers, filter]);
 
     useEffect(() => {
         apiFetch<{ primaryColor: string }>("/client/company")
@@ -177,12 +194,38 @@ export default function BonosPage() {
                 <h1 className="text-lg font-bold text-white">Mis Bonos</h1>
             </header>
             <main className="flex-1 min-h-0 px-6 pt-4 pb-10 space-y-4 overflow-y-auto">
+                {/* Filtro Todos / Activos */}
+                <div className="flex gap-2">
+                    {([
+                        { value: "ACTIVE", label: "Activos" },
+                        { value: "ALL", label: "Todos" },
+                    ] as const).map((option) => {
+                        const isActive = filter === option.value;
+                        return (
+                            <button
+                                key={option.value}
+                                onClick={() => setFilter(option.value)}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
+                                    isActive
+                                        ? "text-white border-transparent"
+                                        : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50"
+                                }`}
+                                style={isActive ? { backgroundColor: primaryColor } : undefined}
+                            >
+                                {option.label}
+                            </button>
+                        );
+                    })}
+                </div>
+
                 {loading ? (
                     <p className="text-gray-400 text-sm">Cargando bonos...</p>
-                ) : vouchers.length === 0 ? (
-                    <p className="text-gray-400 text-sm">No tienes bonos activos.</p>
+                ) : visibleVouchers.length === 0 ? (
+                    <p className="text-gray-400 text-sm">
+                        {filter === "ACTIVE" ? "No tienes bonos activos." : "No tienes bonos."}
+                    </p>
                 ) : (
-                    vouchers.map((v) => (
+                    visibleVouchers.map((v) => (
                         <div key={v.id} className="rounded-xl border border-gray-100 p-4 bg-gray-50">
                             <div className="flex justify-between items-start mb-2">
                                 <div>
