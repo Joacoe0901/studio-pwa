@@ -48,6 +48,15 @@ export default function RootLayout({
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 
+  // ── Update the home-screen (apple-touch) icon to the studio's custom icon ──
+  function applyAppIcon(url) {
+    if (!url) return;
+    var links = document.querySelectorAll('link[rel="apple-touch-icon"]');
+    for (var i = 0; i < links.length; i++) {
+      links[i].setAttribute('href', url);
+    }
+  }
+
   // ── Inject branding CSS custom properties from localStorage ──
   // Runs before React mounts, so the correct colours are available immediately.
   try {
@@ -63,6 +72,9 @@ if ('serviceWorker' in navigator) {
       }
       if (branding.backgroundImageUrl) {
         document.documentElement.style.setProperty('--brand-bg-image', 'url(' + branding.backgroundImageUrl + ')');
+      }
+      if (branding.appIconUrl) {
+        applyAppIcon(branding.appIconUrl);
       }
     }
   } catch(e) {}
@@ -89,6 +101,7 @@ if ('serviceWorker' in navigator) {
       );
       var meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', data.primaryColor);
+      applyAppIcon(data.appIconUrl);
       localStorage.setItem('studioBranding', JSON.stringify(data));
     })
     .catch(function() {});

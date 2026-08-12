@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 // Server-side route — uses env var directly (no proxy needed for manifest)
 // Fallback icon served by Go backend at GET /api/v1/app-icon.
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
@@ -32,7 +34,9 @@ export async function GET() {
             ],
         };
 
-        return NextResponse.json(manifest);
+        return NextResponse.json(manifest, {
+            headers: { "Cache-Control": "no-store" },
+        });
     } catch {
         return NextResponse.json(
             {
@@ -46,7 +50,8 @@ export async function GET() {
                 icons: [
                     { src: "/andes_logo_pwa.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
                 ],
-            }
+            },
+            { headers: { "Cache-Control": "no-store" } }
         );
     }
 }
