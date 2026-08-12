@@ -4,20 +4,49 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Andes Pilates",
-  description: "Tu espacio de bienestar",
-  manifest: "/manifest.json",
-  icons: {
-    icon: "/favicon.png",
-    apple: "/andes_logo_pwa.png",
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
+
+// Resolves the studio's custom app icon from the public /settings endpoint.
+// Uses ISR (revalidate every 5 min) so pages keep being statically served while
+// the icon picks up changes shortly after the manager saves them. A short
+// timeout protects the render/build from slow or cold backends.
+async function getAppIconUrl(): Promise<string | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2000);
+  try {
+    const res = await fetch(`${API_URL}/settings`, {
+      signal: controller.signal,
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data.appIconUrl === "string" && data.appIconUrl.trim() !== ""
+      ? data.appIconUrl
+      : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const appIconUrl = await getAppIconUrl();
+  return {
     title: "Andes Pilates",
-  },
-};
+    description: "Tu espacio de bienestar",
+    manifest: "/manifest.json",
+    icons: {
+      icon: appIconUrl ?? "/favicon.png",
+      apple: appIconUrl ?? "/andes_logo_pwa.png",
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: "Andes Pilates",
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#53593D",
@@ -39,7 +68,6 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <link rel="apple-touch-icon" href="/andes_logo_pwa.png" />
       </head>
       <body className={inter.className}>
         <script
@@ -47,15 +75,6 @@ export default function RootLayout({
             __html: `
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
-
-  // ── Update the home-screen (apple-touch) icon to the studio's custom icon ──
-  function applyAppIcon(url) {
-    if (!url) return;
-    var links = document.querySelectorAll('link[rel="apple-touch-icon"]');
-    for (var i = 0; i < links.length; i++) {
-      links[i].setAttribute('href', url);
-    }
-  }
 
   // ── Inject branding CSS custom properties from localStorage ──
   // Runs before React mounts, so the correct colours are available immediately.
@@ -72,9 +91,6 @@ if ('serviceWorker' in navigator) {
       }
       if (branding.backgroundImageUrl) {
         document.documentElement.style.setProperty('--brand-bg-image', 'url(' + branding.backgroundImageUrl + ')');
-      }
-      if (branding.appIconUrl) {
-        applyAppIcon(branding.appIconUrl);
       }
     }
   } catch(e) {}
@@ -101,7 +117,6 @@ if ('serviceWorker' in navigator) {
       );
       var meta = document.querySelector('meta[name="theme-color"]');
       if (meta) meta.setAttribute('content', data.primaryColor);
-      applyAppIcon(data.appIconUrl);
       localStorage.setItem('studioBranding', JSON.stringify(data));
     })
     .catch(function() {});
