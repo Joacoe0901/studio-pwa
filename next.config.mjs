@@ -12,6 +12,18 @@ const withPWA = withPWAInit({
     disableDevLogs: true,
     runtimeCaching: [
       {
+        // The web app manifest must always be fetched fresh (it carries the
+        // custom app icon). Without this, the default `.json` NetworkFirst
+        // route would cache /manifest.json for 24 h and could serve a stale
+        // icon after the studio changes it.
+        urlPattern: ({ url, sameOrigin }) =>
+          sameOrigin && url.pathname === "/manifest.json",
+        handler: "NetworkOnly",
+        options: {
+          cacheName: "manifest",
+        },
+      },
+      {
         // Branding API must never be timed out by the SW — cold backends
         // can take 15-30 s to respond. Registered BEFORE the generic /api/*
         // NetworkFirst route so it takes precedence.

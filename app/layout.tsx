@@ -9,10 +9,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1
 // Resolves the studio's custom app icon from the public /settings endpoint.
 // Uses ISR (revalidate every 5 min) so pages keep being statically served while
 // the icon picks up changes shortly after the manager saves them. A short
-// timeout protects the render/build from slow or cold backends.
+// timeout protects the render/build from slow or cold backends; 5s is generous
+// enough for a warm VPS backend but avoids falling back to the old logo on a
+// brief slowdown (the manifest route fetches /settings with no timeout and
+// resolves the icon reliably, so this should match it).
 async function getAppIconUrl(): Promise<string | null> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 2000);
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
     const res = await fetch(`${API_URL}/settings`, {
       signal: controller.signal,
