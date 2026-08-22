@@ -97,7 +97,7 @@ const hamburgerItems = [
     icon: "M12 2.25c-5.384 0-9.75 4.366-9.75 9.75s4.366 9.75 9.75 9.75 9.75-4.366 9.75-9.75S17.384 2.25 12 2.25Zm-1.75 13.5a.75.75 0 0 1-1.5 0V10.5a.75.75 0 0 1 1.5 0v5.25Zm1.75-7.125a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z",
   },
   {
-    label: "Comunicaciones de Marketing",
+    label: "Comunicaciones Comerciales",
     href: "/comunicaciones",
     icon: "M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75",
   },
@@ -512,7 +512,7 @@ export default function HomePage() {
     const docLabels: Record<string, string> = {
       TERMS_AND_CONDITIONS: "Términos y Condiciones",
       PRIVACY_POLICY: "Política de Privacidad",
-      MARKETING_COMMUNICATIONS: "Comunicaciones de Marketing",
+      MARKETING_COMMUNICATIONS: "Comunicaciones Comerciales",
     };
     return (
       <div className="h-dvh bg-white flex flex-col overflow-hidden">

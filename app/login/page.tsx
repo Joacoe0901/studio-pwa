@@ -195,7 +195,7 @@ export default function LoginPage() {
                 href="/comunicaciones"
                 className="text-brand-600 underline hover:text-brand-700"
               >
-                Comunicaciones de Marketing
+                Comunicaciones Comerciales
               </Link>
             </span>
           </label>

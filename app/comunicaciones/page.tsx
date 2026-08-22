@@ -64,7 +64,7 @@ export default function ComunicacionesPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                     </svg>
                 </button>
-                <h1 className="text-lg font-bold text-white">Comunicaciones de Marketing</h1>
+                <h1 className="text-lg font-bold text-white">Comunicaciones Comerciales</h1>
             </header>
             <main className="flex-1 min-h-0 overflow-y-auto flex flex-col">
                 <div className="flex-1 px-6 pt-4 pb-6">
@@ -74,7 +74,7 @@ export default function ComunicacionesPage() {
                         <div className="text-center py-12">
                             <p className="text-gray-400 text-sm">
                                 {info?.studioName ?? "El estudio"} aún no ha publicado su política de
-                                comunicaciones de marketing.
+                                comunicaciones comerciales.
                             </p>
                         </div>
                     ) : (
@@ -96,7 +96,7 @@ export default function ComunicacionesPage() {
                                 className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 flex-shrink-0"
                             />
                             <span className="text-sm text-gray-700 leading-snug">
-                                Acepto recibir comunicaciones de marketing
+                                Acepto recibir comunicaciones comerciales
                             </span>
                         </label>
                         {saving && (
