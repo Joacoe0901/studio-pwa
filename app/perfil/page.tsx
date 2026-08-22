@@ -127,7 +127,7 @@ export default function PerfilPage() {
                 </button>
                 <h1 className="text-lg font-bold text-white">Perfil</h1>
             </header>
-            <main className="flex-1 min-h-0 px-6 pb-10 pt-4 overflow-y-auto">
+            <main className="flex-1 min-h-0 px-6 pb-10 pt-4 overflow-y-auto overflow-x-hidden">
                 {!profile ? (
                     <p className="text-gray-400 text-sm">Cargando...</p>
                 ) : (
@@ -256,7 +256,7 @@ export default function PerfilPage() {
                                     type="date"
                                     value={birthDate}
                                     onChange={(e) => setBirthDate(e.target.value)}
-                                    className="w-full h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                    className="w-full min-w-0 max-w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-brand-500"
                                 />
                             </div>
                             <div className="space-y-1">
