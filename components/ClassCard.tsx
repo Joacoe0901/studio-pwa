@@ -25,7 +25,6 @@ interface ClassCardProps {
   onCancel: (session: ClassSession) => void;
   onWaitlist: (session: ClassSession) => void;
   loading: boolean;
-  studioName: string;
 }
 
 function formatTime(iso: string): string {
@@ -54,7 +53,6 @@ export default function ClassCard({
   onCancel,
   onWaitlist,
   loading,
-  studioName,
 }: ClassCardProps) {
   const isFull = session.enrolledCount >= session.maxCapacity && session.maxCapacity > 0;
   const hasWaitlist = session.waitlistCount > 0;
@@ -165,13 +163,12 @@ export default function ClassCard({
           <p className="text-sm font-semibold text-gray-800 mt-0.5 uppercase tracking-wide">
             {session.serviceName}
           </p>
-          {/* Instructor + studio */}
-          <p className="text-xs text-gray-500 mt-0.5 leading-tight truncate">
-            {session.instructor ? `con ${session.instructor}` : studioName}
-            {session.instructor && studioName && (
-              <span className="text-gray-300"> · {studioName}</span>
-            )}
-          </p>
+          {/* Instructor */}
+          {session.instructor && (
+            <p className="text-xs text-gray-500 mt-0.5 leading-tight truncate">
+              con {session.instructor}
+            </p>
+          )}
         </div>
 
         {/* Right: capacity + button */}

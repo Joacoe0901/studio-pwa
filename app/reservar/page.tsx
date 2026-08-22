@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, getAccessToken } from "@/lib/api";
-import { getCachedBranding, setCachedBranding } from "@/lib/branding";
+import { setCachedBranding } from "@/lib/branding";
 import CalendarSlider, {
   generateCalendarDays,
   todayStr,
@@ -75,12 +75,6 @@ function cancelTone(outcome: string): "danger" | "warning" | "info" {
 export default function ReservarPage() {
   const router = useRouter();
 
-  const cached = getCachedBranding();
-  const [branding, setBranding] = useState<StudioBranding>({
-    studioName: cached.studioName,
-    primaryColor: cached.primaryColor,
-    calendarDays: "MON_FRI",
-  });
   const [primaryColor, setPrimaryColor] = useState("#53593D");
   const [sessions, setSessions] = useState<ClientBookableSession[]>([]);
   const [days, setDays] = useState<CalendarDay[]>([]);
@@ -126,11 +120,9 @@ export default function ReservarPage() {
     const loadBranding = async () => {
       try {
         const data = await apiFetch<StudioBranding & { secondaryColor?: string; backgroundImageUrl?: string; logoUrl?: string }>("/client/company");
-        setBranding(data);
         setDays(generateCalendarDays(data.calendarDays));
         setCachedBranding(data);
       } catch {
-        setBranding({ studioName: cached.studioName, primaryColor: cached.primaryColor, calendarDays: "MON_FRI" });
         setDays(generateCalendarDays("MON_FRI"));
       }
     };
@@ -273,7 +265,6 @@ export default function ReservarPage() {
   };
 
   /* Derived */
-  const studioName = branding?.studioName ?? "";
 
   return (
     <div className="h-dvh bg-white flex flex-col overflow-hidden">
@@ -321,7 +312,7 @@ export default function ReservarPage() {
           )
         ) : (
           filteredSessions.map((s) => (
-            <ClassCard key={s.id} session={s} isPast={isPast(s.endDateTime)} isOutsideWindow={isOutsideBookingWindow(s.startDateTime)} isCustomerInactive={!customerActive} onReserve={handleReserveClick} onCancel={handleCancelClick} onWaitlist={handleWaitlistClick} loading={reserving === s.id || cancelling === s.id || joiningWaitlist === s.id} studioName={studioName} />
+            <ClassCard key={s.id} session={s} isPast={isPast(s.endDateTime)} isOutsideWindow={isOutsideBookingWindow(s.startDateTime)} isCustomerInactive={!customerActive} onReserve={handleReserveClick} onCancel={handleCancelClick} onWaitlist={handleWaitlistClick} loading={reserving === s.id || cancelling === s.id || joiningWaitlist === s.id} />
           ))
         )}
       </main>
