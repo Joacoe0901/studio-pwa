@@ -17,6 +17,7 @@ interface ClientMe {
     postalCode: string;
     province: string;
     country: string;
+    birthDate: string;
     profileImage: string;
 }
 
@@ -34,6 +35,7 @@ export default function PerfilPage() {
     const [postalCode, setPostalCode] = useState("");
     const [province, setProvince] = useState("");
     const [country, setCountry] = useState("");
+    const [birthDate, setBirthDate] = useState("");
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState("");
     const [primaryColor, setPrimaryColor] = useState("#53593D");
@@ -63,6 +65,7 @@ export default function PerfilPage() {
                 setPostalCode(data.postalCode ?? "");
                 setProvince(data.province ?? "");
                 setCountry(data.country ?? "");
+                setBirthDate(data.birthDate ?? "");
                 setPhotoUrl(data.profileImage ?? "");
             })
             .catch(() => { });
@@ -76,7 +79,7 @@ export default function PerfilPage() {
                 method: "PUT",
                 body: JSON.stringify({
                     firstName, lastName, phone, email, dni,
-                    address, city, postalCode, province, country,
+                    birthDate, address, city, postalCode, province, country,
                 }),
             });
             setMessage("Perfil actualizado.");
@@ -244,6 +247,15 @@ export default function PerfilPage() {
                                     type="tel"
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
+                                    className="w-full h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-gray-700">Fecha de nacimiento</label>
+                                <input
+                                    type="date"
+                                    value={birthDate}
+                                    onChange={(e) => setBirthDate(e.target.value)}
                                     className="w-full h-10 rounded-lg border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                                 />
                             </div>
