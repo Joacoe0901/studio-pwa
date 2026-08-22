@@ -70,7 +70,7 @@ export default function SpotFreedModal({
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl animate-scale-in overflow-hidden">
+      <div className="relative w-full max-w-sm max-h-[85dvh] bg-white rounded-2xl shadow-2xl animate-scale-in overflow-y-auto overflow-x-hidden">
         {success ? (
           <>
             <div className="flex flex-col items-center px-5 pt-6 pb-2 text-center">

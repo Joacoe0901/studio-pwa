@@ -53,7 +53,7 @@ export default function ComunicacionesPage() {
     return (
         <div className="h-dvh bg-white flex flex-col overflow-hidden">
             <header
-                className="flex-shrink-0 px-4 pt-10 pb-3 flex items-center gap-3"
+                className="flex-shrink-0 px-4 pt-safe-top pb-3 flex items-center gap-3"
                 style={{ backgroundColor: primaryColor }}
             >
                 <button

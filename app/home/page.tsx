@@ -515,8 +515,10 @@ export default function HomePage() {
       MARKETING_COMMUNICATIONS: "Comunicaciones de Marketing",
     };
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
-        <img src="/logo-sin-fondo.png" alt="Logo" className="w-[60%] max-w-[200px] h-auto mx-auto mb-8" />
+      <div className="h-dvh bg-white flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto pt-safe">
+          <div className="min-h-full flex flex-col items-center justify-center px-6 py-8">
+            <img src="/logo-sin-fondo.png" alt="Logo" className="w-[60%] max-w-[200px] h-auto mx-auto mb-8" />
         <h1 className="text-xl font-bold text-gray-900 mb-2">Documentos pendientes</h1>
         <p className="text-sm text-gray-500 mb-6 text-center">
           Para continuar, debes aceptar los siguientes documentos:
@@ -556,6 +558,8 @@ export default function HomePage() {
         >
           {acceptingDocs ? "Aceptando..." : "Aceptar y continuar"}
         </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -563,7 +567,7 @@ export default function HomePage() {
   return (
     <div className="h-dvh flex flex-col" style={{ backgroundColor: "#F9F9F9" }}>
       {/* Header — fixed, white background */}
-      <header className="flex-shrink-0 z-20 bg-white shadow-sm">
+      <header className="flex-shrink-0 z-20 bg-white shadow-sm pt-safe">
         <div className="flex items-center justify-between px-4 py-2.5">
           <div className="w-[45%] max-w-[180px]">
             {branding.logoUrl ? (

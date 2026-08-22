@@ -111,15 +111,17 @@ export default function LoginPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
-      {/* Logo */}
-      <div className="mb-10 text-center">
-        <img
-          src="/logo-sin-fondo.png"
-          alt="Andes Pilates"
-          className="w-[70%] h-auto mx-auto object-contain"
-        />
-      </div>
+    <div className="h-dvh bg-white flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto pt-safe">
+        <div className="min-h-full flex flex-col items-center justify-center px-6 py-8">
+          {/* Logo */}
+          <div className="mb-8 text-center w-full">
+            <img
+              src="/logo-sin-fondo.png"
+              alt="Andes Pilates"
+              className="w-[70%] max-w-[220px] h-auto mx-auto object-contain"
+            />
+          </div>
 
       {/* ─── STEP 1: Email + Terms ─────────────────────────────────────── */}
       {step === "email" && (
@@ -328,6 +330,8 @@ export default function LoginPage() {
           </button>
         </form>
       )}
+        </div>
+      </div>
     </div>
   );
 }

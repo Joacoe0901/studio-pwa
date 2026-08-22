@@ -28,15 +28,15 @@ export default function NotificationDetailModal({
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl animate-scale-in overflow-hidden">
+      <div className="relative w-full max-w-sm max-h-[85dvh] bg-white rounded-2xl shadow-2xl animate-scale-in overflow-y-auto overflow-x-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <h2 className="text-lg font-bold text-gray-900 pr-8 leading-snug">
+          <h2 className="flex-1 min-w-0 text-lg font-bold text-gray-900 pr-2 leading-snug">
             {notification.title}
           </h2>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
+            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
             aria-label="Cerrar"
           >
             <svg

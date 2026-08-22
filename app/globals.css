@@ -35,7 +35,7 @@
     -webkit-user-select: none;
     user-select: none;
     /* Safe area for notched phones */
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 }
 
@@ -97,5 +97,13 @@
   .scrollbar-hide {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;     /* Firefox */
+  }
+  /* Safe-area helpers (standalone PWA): keep full-screen screens and coloured
+     headers clear of the notch/status bar while the body top edge stays flush. */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pt-safe-top {
+    padding-top: calc(env(safe-area-inset-top) + 2.5rem);
   }
 }
