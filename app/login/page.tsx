@@ -11,6 +11,7 @@ import {
   getPublicLegalContent,
   recordAcceptance,
 } from "@/lib/api";
+import InstallBanner from "@/components/InstallBanner";
 
 const CODE_LENGTH = 6;
 
@@ -132,6 +133,7 @@ export default function LoginPage() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="h-dvh bg-white flex flex-col overflow-hidden">
+      <InstallBanner />
       <div className="flex-1 min-h-0 overflow-y-auto pt-safe">
         <div className="min-h-full flex flex-col items-center justify-center px-6 py-8">
           {/* Logo */}
