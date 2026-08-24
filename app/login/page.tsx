@@ -12,6 +12,9 @@ import {
   recordAcceptance,
 } from "@/lib/api";
 import InstallBanner from "@/components/InstallBanner";
+import InstallPromptModal from "@/components/InstallPromptModal";
+import { getInstallPromptVariant, markInstallPromptSeen, type InstallPromptVariant } from "@/lib/onboarding";
+import { getCachedBranding } from "@/lib/branding";
 
 const CODE_LENGTH = 6;
 
@@ -26,6 +29,21 @@ export default function LoginPage() {
       router.replace("/home");
     }
   }, [router]);
+
+  /* ─── Install guide on first access (mobile only) ─────────────────────── */
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptVariant | null>(null);
+
+  useEffect(() => {
+    // Already-authenticated users are redirected to /home, which shows the
+    // prompt instead — avoid a flash here.
+    if (getAccessToken()) return;
+    setInstallPrompt(getInstallPromptVariant());
+  }, []);
+
+  function handleCloseInstallPrompt() {
+    markInstallPromptSeen();
+    setInstallPrompt(null);
+  }
 
   // ── Shared state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>("email");
@@ -354,6 +372,15 @@ export default function LoginPage() {
       )}
         </div>
       </div>
+
+      {/* ─── Install guide modal (first access, mobile) ─────────────────── */}
+      {installPrompt && (
+        <InstallPromptModal
+          variant={installPrompt}
+          onClose={handleCloseInstallPrompt}
+          primaryColor={getCachedBranding().primaryColor}
+        />
+      )}
     </div>
   );
 }
