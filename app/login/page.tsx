@@ -128,6 +128,22 @@ export default function LoginPage() {
     try {
       await loginWithCode(code);
 
+      // Record the mandatory legal acceptance (Terms + Privacy) that the user
+      // already consented to via the checkbox on the login screen. Without this,
+      // /home's checkAccessStatus() sees them as pending and re-prompts.
+      if (acceptedLegal) {
+        for (const docType of ["TERMS_AND_CONDITIONS", "PRIVACY_POLICY"]) {
+          try {
+            const pub = await getPublicLegalContent(docType);
+            if (pub.versionId) {
+              await recordAcceptance(pub.versionId, true);
+            }
+          } catch {
+            // Do not block login if recording acceptance fails.
+          }
+        }
+      }
+
       // Record commercial communications consent if the user opted in at login.
       if (acceptedMarketing) {
         try {
