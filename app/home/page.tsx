@@ -517,13 +517,17 @@ export default function HomePage() {
   // Check push support on mount and offer the opt-in prompt when relevant.
   useEffect(() => {
     setPushSupported(isPushSupported());
+    // The opt-in decision only needs the (synchronous) permission state, so we
+    // evaluate it immediately. Do NOT gate it behind the async subscription
+    // check: if the service worker is slow or fails to become ready, that
+    // promise may never settle and the modal would silently never appear.
+    if (shouldShowPushPrompt()) {
+      setShowPushPrompt(true);
+    }
     if (isPushSupported()) {
-      checkSubscription().then((subscribed) => {
-        setPushEnabled(subscribed);
-        if (!subscribed && shouldShowPushPrompt()) {
-          setShowPushPrompt(true);
-        }
-      });
+      checkSubscription()
+        .then(setPushEnabled)
+        .catch(() => setPushEnabled(false));
     }
   }, []);
 
