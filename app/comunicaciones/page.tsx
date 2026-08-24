@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getPublicLegalContent, recordAcceptance } from "@/lib/api";
+import { getPublicLegalContent, recordAcceptance, getAcceptanceStatus, getAccessToken } from "@/lib/api";
 
 export default function ComunicacionesPage() {
     const router = useRouter();
@@ -14,6 +14,7 @@ export default function ComunicacionesPage() {
     } | null>(null);
     const [loading, setLoading] = useState(true);
     const [accepted, setAccepted] = useState(false);
+    const [authenticated, setAuthenticated] = useState(false);
     const [saving, setSaving] = useState(false);
     const primaryColor = info?.primaryColor || "#53593D";
 
@@ -27,6 +28,17 @@ export default function ComunicacionesPage() {
                     studioName: "Andes Pilates",
                     primaryColor: "#53593D",
                 });
+
+                const token = getAccessToken();
+                setAuthenticated(!!token);
+                if (token && data.versionId) {
+                    try {
+                        const status = await getAcceptanceStatus(data.versionId);
+                        setAccepted(status.accepted === true);
+                    } catch {
+                        // ignore — checkbox stays unchecked
+                    }
+                }
             } catch {
                 // ignore
             } finally {
@@ -38,6 +50,10 @@ export default function ComunicacionesPage() {
 
     async function handleToggleMarketing(checked: boolean) {
         if (!info?.versionId) return;
+        if (!authenticated) {
+            router.push("/login");
+            return;
+        }
         setAccepted(checked);
         setSaving(true);
         try {
@@ -91,7 +107,7 @@ export default function ComunicacionesPage() {
                             <input
                                 type="checkbox"
                                 checked={accepted}
-                                disabled={saving}
+                                disabled={saving || !authenticated}
                                 onChange={(e) => handleToggleMarketing(e.target.checked)}
                                 className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 flex-shrink-0"
                             />
@@ -101,6 +117,11 @@ export default function ComunicacionesPage() {
                         </label>
                         {saving && (
                             <p className="text-xs text-gray-400 mt-2 ml-8">Guardando...</p>
+                        )}
+                        {!authenticated && (
+                            <p className="text-xs text-gray-400 mt-2 ml-8">
+                                Inicia sesión para gestionar tus preferencias.
+                            </p>
                         )}
                     </div>
                 )}

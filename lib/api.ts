@@ -269,6 +269,10 @@ export async function recordAcceptance(versionId: number, accepted: boolean): Pr
   });
 }
 
+export async function getAcceptanceStatus(versionId: number): Promise<{ versionId: number; accepted: boolean; acceptedAt?: string }> {
+  return apiFetch(`/client/legal-acceptances/status?versionId=${versionId}`, { method: "GET" });
+}
+
 export async function getPublicLegalContent(docType: string): Promise<{ type: string; content: string; versionId?: number }> {
   const token = getAccessToken();
   const headers: Record<string, string> = { "Content-Type": "application/json" };

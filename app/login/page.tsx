@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { loginWithCode, requestCodeByEmail, checkCustomerEmail, getAccessToken } from "@/lib/api";
+import {
+  loginWithCode,
+  requestCodeByEmail,
+  checkCustomerEmail,
+  getAccessToken,
+  getPublicLegalContent,
+  recordAcceptance,
+} from "@/lib/api";
 
 const CODE_LENGTH = 6;
 
@@ -101,6 +108,19 @@ export default function LoginPage() {
 
     try {
       await loginWithCode(code);
+
+      // Record commercial communications consent if the user opted in at login.
+      if (acceptedMarketing) {
+        try {
+          const pub = await getPublicLegalContent("MARKETING_COMMUNICATIONS");
+          if (pub.versionId) {
+            await recordAcceptance(pub.versionId, true);
+          }
+        } catch {
+          // Do not block login if consent recording fails.
+        }
+      }
+
       router.push("/home");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error inesperado. Intenta de nuevo.");
