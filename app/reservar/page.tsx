@@ -87,9 +87,8 @@ export default function ReservarPage() {
   const [confirmCancel, setConfirmCancel] = useState<ClientBookableSession | null>(null);
   const [confirmWaitlist, setConfirmWaitlist] = useState<ClientBookableSession | null>(null);
   const [cancelPreview, setCancelPreview] = useState<{ message: string; tone: "danger" | "warning" | "info" } | null>(null);
-  const [errorModal, setErrorModal] = useState<{ session: ClientBookableSession; message: string } | null>(null);
-  const [successModal, setSuccessModal] = useState<{ session: ClientBookableSession; message: string } | null>(null);
-  const [message, setMessage] = useState("");
+  const [errorModal, setErrorModal] = useState<{ session: ClientBookableSession; message: string; title?: string } | null>(null);
+  const [successModal, setSuccessModal] = useState<{ session: ClientBookableSession; message: string; title?: string } | null>(null);
   const [customerActive, setCustomerActive] = useState(true);
   const [holidays, setHolidays] = useState<Record<string, string>>({});
 
@@ -163,13 +162,11 @@ export default function ReservarPage() {
 
   /* Reserve */
   const handleReserveClick = (session: ClientBookableSession) => {
-    setMessage("");
     setConfirmReserve(session);
   };
 
   /* Waitlist */
   const handleWaitlistClick = (session: ClientBookableSession) => {
-    setMessage("");
     setConfirmWaitlist(session);
   };
 
@@ -179,11 +176,12 @@ export default function ReservarPage() {
     setJoiningWaitlist(session.id);
     try {
       await apiFetch("/client/waitlist", { method: "POST", body: JSON.stringify({ sessionId: session.id }) });
-      setMessage("Entraste en la lista de espera. Te avisaremos si se libera un lugar.");
       setConfirmWaitlist(null);
+      setSuccessModal({ session, title: "Lista de espera", message: "Entraste en la lista de espera. Te avisaremos si se libera un lugar." });
       await loadSessions();
     } catch (err: unknown) {
-      setMessage(err instanceof Error ? err.message : "Error al entrar en lista de espera");
+      setConfirmWaitlist(null);
+      setErrorModal({ session, title: "Lista de espera", message: err instanceof Error ? err.message : "Error al entrar en lista de espera" });
     }
     setJoiningWaitlist(null);
   };
@@ -222,16 +220,15 @@ export default function ReservarPage() {
 
   /* Cancel / Leave waitlist */
   const handleCancelClick = async (session: ClientBookableSession) => {
-    setMessage("");
     // If waitlisted, leave waitlist directly
     if (session.waitlisted) {
       setCancelling(session.id);
       try {
         await apiFetch(`/client/waitlist/${session.id}`, { method: "DELETE" });
-        setMessage("Saliste de la lista de espera.");
+        setSuccessModal({ session, title: "Lista de espera", message: "Saliste de la lista de espera." });
         await loadSessions();
       } catch (err: unknown) {
-        setMessage(err instanceof Error ? err.message : "Error al salir de la lista de espera");
+        setErrorModal({ session, title: "Lista de espera", message: err instanceof Error ? err.message : "Error al salir de la lista de espera" });
       }
       setCancelling(null);
       return;
@@ -255,11 +252,12 @@ export default function ReservarPage() {
     setCancelling(confirmCancel.id);
     try {
       await apiFetch(`/client/reservations/${confirmCancel.enrollmentId}`, { method: "DELETE" });
-      setMessage("Reserva cancelada.");
       setConfirmCancel(null);
+      setSuccessModal({ session: confirmCancel, title: "Reserva cancelada", message: "Reserva cancelada." });
       await loadSessions();
     } catch (err: unknown) {
-      setMessage(err instanceof Error ? err.message : "Error al cancelar");
+      setConfirmCancel(null);
+      setErrorModal({ session: confirmCancel, title: "Cancelar Reserva", message: err instanceof Error ? err.message : "Error al cancelar" });
     }
     setCancelling(null);
   };
@@ -276,10 +274,7 @@ export default function ReservarPage() {
         </button>
         <h1 className="text-lg font-bold text-white">Reservas</h1>
       </header>
-      <CalendarSlider days={days} selectedDate={selectedDate} onSelect={(date) => { setSelectedDate(date); setMessage(""); }} primaryColor={primaryColor} />
-      {message && (
-        <div className="mx-4 mt-3 p-3 rounded-xl bg-green-50 border border-green-200 text-sm text-green-700 animate-fade-in">{message}</div>
-      )}
+      <CalendarSlider days={days} selectedDate={selectedDate} onSelect={(date) => setSelectedDate(date)} primaryColor={primaryColor} />
       <main className="flex-1 px-4 pb-10 pt-3 space-y-2 overflow-y-auto">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -317,19 +312,19 @@ export default function ReservarPage() {
         )}
       </main>
       {confirmReserve && (
-        <ConfirmationModal type="reserve" session={confirmReserve} onConfirm={handleConfirmReserve} onClose={() => { setConfirmReserve(null); setMessage(""); }} loading={reserving === confirmReserve.id} primaryColor={primaryColor} />
+        <ConfirmationModal type="reserve" session={confirmReserve} onConfirm={handleConfirmReserve} onClose={() => setConfirmReserve(null)} loading={reserving === confirmReserve.id} primaryColor={primaryColor} />
       )}
       {confirmCancel && (
-        <ConfirmationModal type="cancel" session={confirmCancel} message={cancelPreview?.message} tone={cancelPreview?.tone} onConfirm={handleConfirmCancel} onClose={() => { setConfirmCancel(null); setCancelPreview(null); setMessage(""); }} loading={cancelling === confirmCancel.id} primaryColor={primaryColor} />
+        <ConfirmationModal type="cancel" session={confirmCancel} message={cancelPreview?.message} tone={cancelPreview?.tone} onConfirm={handleConfirmCancel} onClose={() => { setConfirmCancel(null); setCancelPreview(null); }} loading={cancelling === confirmCancel.id} primaryColor={primaryColor} />
       )}
       {confirmWaitlist && (
-        <ConfirmationModal type="waitlist" session={confirmWaitlist} onConfirm={handleConfirmWaitlist} onClose={() => { setConfirmWaitlist(null); setMessage(""); }} loading={joiningWaitlist === confirmWaitlist.id} primaryColor={primaryColor} />
+        <ConfirmationModal type="waitlist" session={confirmWaitlist} onConfirm={handleConfirmWaitlist} onClose={() => setConfirmWaitlist(null)} loading={joiningWaitlist === confirmWaitlist.id} primaryColor={primaryColor} />
       )}
       {errorModal && (
         <ConfirmationModal
           type="error"
           session={errorModal.session}
-          title="No hay clases disponibles"
+          title={errorModal.title}
           message={errorModal.message}
           onClose={() => setErrorModal(null)}
           primaryColor={primaryColor}
@@ -339,6 +334,7 @@ export default function ReservarPage() {
         <ConfirmationModal
           type="success"
           session={successModal.session}
+          title={successModal.title}
           message={successModal.message}
           onClose={() => setSuccessModal(null)}
           primaryColor={primaryColor}

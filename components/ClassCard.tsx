@@ -101,13 +101,13 @@ export default function ClassCard({
     buttonDisabled = loading;
   } else if (isFull) {
     if (isOutsideWindow) {
-      buttonLabel = "EN LISTA";
+      buttonLabel = "ENTRAR EN LISTA";
       buttonClass =
         "text-gray-400 font-medium px-4 py-2 rounded-xl border border-gray-200 cursor-not-allowed text-xs";
       buttonDisabled = true;
       buttonAction = () => {};
     } else {
-      buttonLabel = "EN LISTA";
+      buttonLabel = "ENTRAR EN LISTA";
       buttonClass =
         "bg-gray-800 text-white font-medium px-5 py-2 rounded-xl hover:bg-gray-900 active:scale-[0.98] transition-all shadow-sm";
       buttonAction = () => onWaitlist(session);
@@ -136,7 +136,7 @@ export default function ClassCard({
     } else if (session.waitlisted && !isFull) {
       buttonLabel = "RESERVAR";
     } else if (isFull) {
-      buttonLabel = "EN LISTA";
+      buttonLabel = "ENTRAR EN LISTA";
     } else {
       buttonLabel = "RESERVAR";
     }
