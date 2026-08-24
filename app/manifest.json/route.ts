@@ -35,6 +35,23 @@ export async function GET() {
         const primaryColor = data.primaryColor || "#53593D";
         const appIconUrl = data.appIconUrl || "/icons/icon-512.png";
 
+        // Chrome requires BOTH a 192px and a 512px icon for installability.
+        // A custom upload may be an arbitrary size (declared "any"), so always
+        // append the built-in 192 + 512 fallbacks and dedupe by src.
+        const icons = [
+            {
+                src: appIconUrl,
+                sizes: iconSizesFromUrl(appIconUrl),
+                type: iconTypeFromUrl(appIconUrl),
+                purpose: "any maskable",
+            },
+            { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+            { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+        ].filter(
+            (icon, index, self) =>
+                self.findIndex((i) => i.src === icon.src) === index
+        );
+
         const manifest = {
             name: studioName,
             short_name: studioName,
@@ -44,14 +61,7 @@ export async function GET() {
             background_color: "#FFFFFF",
             theme_color: primaryColor,
             orientation: "portrait",
-            icons: [
-                {
-                    src: appIconUrl,
-                    sizes: iconSizesFromUrl(appIconUrl),
-                    type: iconTypeFromUrl(appIconUrl),
-                    purpose: "any maskable",
-                },
-            ],
+            icons,
         };
 
         return NextResponse.json(manifest, {
@@ -69,6 +79,8 @@ export async function GET() {
                 orientation: "portrait",
                 icons: [
                     { src: "/andes_logo_pwa.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+                    { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+                    { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
                 ],
             },
             { headers: { "Cache-Control": "no-store" } }

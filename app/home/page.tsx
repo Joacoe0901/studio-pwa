@@ -8,6 +8,9 @@ import NotificationsBottomSheet from "@/components/NotificationsBottomSheet";
 import NotificationDetailModal from "@/components/NotificationDetailModal";
 import SpotFreedModal from "@/components/SpotFreedModal";
 import { isPushSupported, getNotificationPermission, subscribeToPush, unsubscribeFromPush, isSubscribed, checkSubscription } from "@/lib/push";
+import InstallPromptModal from "@/components/InstallPromptModal";
+import { getInstallPromptVariant, markInstallPromptSeen, type InstallPromptVariant } from "@/lib/onboarding";
+import { initInstallPrompt, onInstallabilityChange, promptInstall } from "@/lib/install";
 
 interface StudioBranding {
   studioName: string;
@@ -131,6 +134,14 @@ export default function HomePage() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);
 
+  /* ─── Install prompt (first access) state ─────────────────────────────── */
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptVariant | null>(null);
+
+  /* ─── Native install (Android Chrome beforeinstallprompt) ─────────────── */
+  const [installable, setInstallable] = useState(false);
+  const [installDismissed, setInstallDismissed] = useState(false);
+  const [installing, setInstalling] = useState(false);
+
   // ─── Legal document acceptance check ─────────────────────────────────────
   const [accessBlocked, setAccessBlocked] = useState(false);
   const [pendingDocs, setPendingDocs] = useState<Array<{
@@ -157,6 +168,31 @@ export default function HomePage() {
   useEffect(() => {
     checkAccess();
   }, [checkAccess]);
+
+  /* ─── Show install guide on first access (mobile only) ────────────────── */
+  useEffect(() => {
+    setInstallPrompt(getInstallPromptVariant());
+  }, []);
+
+  /* ─── Listen for the native install prompt (Android Chrome) ───────────── */
+  useEffect(() => {
+    initInstallPrompt();
+    return onInstallabilityChange(setInstallable);
+  }, []);
+
+  const handleCloseInstallPrompt = useCallback(() => {
+    markInstallPromptSeen();
+    setInstallPrompt(null);
+  }, []);
+
+  const handleInstall = useCallback(async () => {
+    setInstalling(true);
+    try {
+      await promptInstall();
+    } finally {
+      setInstalling(false);
+    }
+  }, []);
 
   const handleAcceptAll = async () => {
     setAcceptingDocs(true);
@@ -590,6 +626,34 @@ export default function HomePage() {
             </svg>
           </button>
         </div>
+
+        {/* ─── Native install banner (Android Chrome) ─────────────────────── */}
+        {installable && !installDismissed && (
+          <div
+            className="flex items-center gap-2 px-4 py-2"
+            style={{ backgroundColor: branding.primaryColor }}
+          >
+            <button
+              onClick={handleInstall}
+              disabled={installing}
+              className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-white text-sm font-semibold active:scale-[0.98] transition-transform disabled:opacity-60"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              {installing ? "Instalando…" : "Instalar app"}
+            </button>
+            <button
+              onClick={() => setInstallDismissed(true)}
+              aria-label="Cerrar"
+              className="p-1.5 text-white/80 hover:text-white transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Hero section — capped height */}
@@ -807,6 +871,17 @@ export default function HomePage() {
           session={spotFreedModal.session}
           onBook={handleSpotFreedBook}
           onDismiss={handleSpotFreedDismiss}
+          primaryColor={branding.primaryColor}
+        />
+      )}
+
+      {/* ─── Install prompt modal (first access, mobile) ───────────────── */}
+      {installPrompt && (
+        <InstallPromptModal
+          variant={installPrompt}
+          onClose={handleCloseInstallPrompt}
+          onInstall={handleInstall}
+          installable={installable}
           primaryColor={branding.primaryColor}
         />
       )}
