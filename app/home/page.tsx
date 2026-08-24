@@ -534,8 +534,8 @@ export default function HomePage() {
                   <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Opcional</span>
                 )}
               </div>
-              <div className="text-sm text-gray-600 max-h-32 overflow-y-auto whitespace-pre-line border-t pt-2">
-                {doc.content.slice(0, 500)}
+              <div className="text-sm text-gray-600 max-h-72 overflow-y-auto whitespace-pre-line border-t pt-2 pr-1">
+                {doc.content}
               </div>
               {!doc.required && (
                 <button
