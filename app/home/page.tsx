@@ -9,7 +9,8 @@ import NotificationDetailModal from "@/components/NotificationDetailModal";
 import SpotFreedModal from "@/components/SpotFreedModal";
 import { isPushSupported, getNotificationPermission, subscribeToPush, unsubscribeFromPush, isSubscribed, checkSubscription } from "@/lib/push";
 import InstallPromptModal from "@/components/InstallPromptModal";
-import { getInstallPromptVariant, markInstallPromptSeen, type InstallPromptVariant } from "@/lib/onboarding";
+import PushNotificationModal from "@/components/PushNotificationModal";
+import { getInstallPromptVariant, markInstallPromptSeen, shouldShowPushPrompt, markPushPromptSeen, type InstallPromptVariant } from "@/lib/onboarding";
 import { initInstallPrompt, onInstallabilityChange, promptInstall } from "@/lib/install";
 import InstallBanner from "@/components/InstallBanner";
 
@@ -138,6 +139,10 @@ export default function HomePage() {
   /* ─── Install prompt (first access) state ─────────────────────────────── */
   const [installPrompt, setInstallPrompt] = useState<InstallPromptVariant | null>(null);
 
+  /* ─── Push opt-in prompt state ─────────────────────────────────────────── */
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const [pushPromptLoading, setPushPromptLoading] = useState(false);
+
   /* ─── Native install (Android Chrome beforeinstallprompt) ─────────────── */
   const [installable, setInstallable] = useState(false);
 
@@ -186,6 +191,28 @@ export default function HomePage() {
 
   const handleInstall = useCallback(async () => {
     await promptInstall();
+  }, []);
+
+  /* ─── Push opt-in handlers ─────────────────────────────────────────────── */
+  const handleEnablePush = useCallback(async () => {
+    const token = getAccessToken();
+    if (!token) return;
+    setPushPromptLoading(true);
+    try {
+      await subscribeToPush(token);
+      setPushEnabled(true);
+    } catch {
+      // permission denied or unsupported — nothing to do here
+    } finally {
+      setPushPromptLoading(false);
+      markPushPromptSeen();
+      setShowPushPrompt(false);
+    }
+  }, []);
+
+  const handleDismissPushPrompt = useCallback(() => {
+    markPushPromptSeen();
+    setShowPushPrompt(false);
   }, []);
 
   const handleAcceptAll = async () => {
@@ -487,11 +514,16 @@ export default function HomePage() {
     }
   }, [pushEnabled]);
 
-  // Check push support on mount
+  // Check push support on mount and offer the opt-in prompt when relevant.
   useEffect(() => {
     setPushSupported(isPushSupported());
     if (isPushSupported()) {
-      checkSubscription().then(setPushEnabled);
+      checkSubscription().then((subscribed) => {
+        setPushEnabled(subscribed);
+        if (!subscribed && shouldShowPushPrompt()) {
+          setShowPushPrompt(true);
+        }
+      });
     }
   }, []);
 
@@ -851,6 +883,16 @@ export default function HomePage() {
           onClose={handleCloseInstallPrompt}
           onInstall={handleInstall}
           installable={installable}
+          primaryColor={branding.primaryColor}
+        />
+      )}
+
+      {/* ─── Push notifications opt-in modal (mobile) ──────────────────── */}
+      {showPushPrompt && !installPrompt && (
+        <PushNotificationModal
+          onEnable={handleEnablePush}
+          onClose={handleDismissPushPrompt}
+          loading={pushPromptLoading}
           primaryColor={branding.primaryColor}
         />
       )}
