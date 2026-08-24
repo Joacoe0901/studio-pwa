@@ -92,15 +92,18 @@ export default function InstallPromptModal({
         <div
           ref={trackRef}
           onScroll={handleScroll}
-          className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+          className="flex flex-1 min-h-0 overflow-x-auto scrollbar-hide snap-x snap-mandatory"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
           {slides.map((slide) => (
-            <div key={slide.src} className="w-full flex-shrink-0 snap-center px-5">
+            <div
+              key={slide.src}
+              className="w-full flex-shrink-0 snap-center px-5 flex items-center justify-center"
+            >
               <img
                 src={slide.src}
                 alt={slide.alt}
-                className="w-full max-h-[52dvh] object-contain rounded-xl bg-gray-100"
+                className="max-w-full max-h-full object-contain rounded-xl bg-gray-100"
                 draggable={false}
               />
             </div>
