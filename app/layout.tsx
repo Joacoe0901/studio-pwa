@@ -71,6 +71,20 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+// Capture the native install prompt as early as possible (before React hydrates)
+// so we don't miss it when Chrome fires it on any page (e.g. /login). The
+// library in lib/install.ts adopts it from window.__beforeInstallPrompt.
+window.__beforeInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  window.__beforeInstallPrompt = e;
+});
+`,
+          }}
+        />
       </head>
       <body className={inter.className}>
         <script
