@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, getAccessToken, resolveUploadUrl, API_URL } from "@/lib/api";
+import { DateInput } from "@/components/ui/date-input";
 
 interface ClientMe {
     id: number;
@@ -252,11 +253,11 @@ export default function PerfilPage() {
                             </div>
                             <div className="space-y-1">
                                 <label className="text-sm font-medium text-gray-700">Fecha de nacimiento</label>
-                                <input
-                                    type="date"
+                                <DateInput
                                     value={birthDate}
-                                    onChange={(e) => setBirthDate(e.target.value)}
-                                    className="w-full min-w-0 max-w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                    onChange={setBirthDate}
+                                    placeholder="Seleccionar fecha"
+                                    ariaLabel="Fecha de nacimiento"
                                 />
                             </div>
                             <div className="space-y-1">
