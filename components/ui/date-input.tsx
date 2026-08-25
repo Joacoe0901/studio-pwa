@@ -17,6 +17,9 @@ const MONTHS = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
+const MONTHS_SHORT = MONTHS.map((m) => m.slice(0, 3));
+
+type View = "days" | "months" | "years";
 
 // "YYYY-MM-DD" -> "dd/mm/aaaa" (sin pasar por Date, evita desfases de zona horaria)
 function formatDisplay(value: string): string {
@@ -45,6 +48,7 @@ export function DateInput({
   ariaLabel,
 }: DateInputProps) {
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<View>("days");
   const [viewDate, setViewDate] = useState<Date>(() => new Date());
 
   const openPicker = () => {
@@ -55,6 +59,7 @@ export function DateInput({
       const now = new Date();
       setViewDate(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)));
     }
+    setView("days");
     setOpen(true);
   };
 
@@ -68,6 +73,15 @@ export function DateInput({
   const nextMonth = () =>
     setViewDate((d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)));
 
+  const prevYear = () =>
+    setViewDate((d) => new Date(Date.UTC(d.getUTCFullYear() - 1, d.getUTCMonth(), 1)));
+  const nextYear = () =>
+    setViewDate((d) => new Date(Date.UTC(d.getUTCFullYear() + 1, d.getUTCMonth(), 1)));
+  const prevYears = () =>
+    setViewDate((d) => new Date(Date.UTC(d.getUTCFullYear() - 12, d.getUTCMonth(), 1)));
+  const nextYears = () =>
+    setViewDate((d) => new Date(Date.UTC(d.getUTCFullYear() + 12, d.getUTCMonth(), 1)));
+
   const gridStart = getGridStart(viewDate.getUTCFullYear(), viewDate.getUTCMonth());
   const days = Array.from({ length: 42 }, (_, i) =>
     new Date(Date.UTC(gridStart.getUTCFullYear(), gridStart.getUTCMonth(), gridStart.getUTCDate() + i))
@@ -75,6 +89,8 @@ export function DateInput({
   const todayISO = toISODate(new Date());
   const currentYear = viewDate.getUTCFullYear();
   const currentMonth = viewDate.getUTCMonth();
+  const startYear = Math.floor(currentYear / 12) * 12;
+  const years = Array.from({ length: 12 }, (_, i) => startYear + i);
 
   return (
     <div className={cn("relative", className)}>
@@ -133,65 +149,187 @@ export function DateInput({
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-full z-50 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
             <div className="mb-2 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={prevMonth}
-                aria-label="Mes anterior"
-                className="rounded-md p-1 hover:bg-gray-100"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
-                </svg>
-              </button>
-              <div className="text-sm font-medium text-gray-700">
-                {MONTHS[currentMonth]} {currentYear}
-              </div>
-              <button
-                type="button"
-                onClick={nextMonth}
-                aria-label="Mes siguiente"
-                className="rounded-md p-1 hover:bg-gray-100"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-7">
-              {DAY_LABELS.map((label) => (
-                <div key={label} className="py-1 text-center text-xs text-gray-400">
-                  {label}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7">
-              {days.map((day) => {
-                const iso = toISODate(day);
-                const inMonth = day.getUTCMonth() === currentMonth && day.getUTCFullYear() === currentYear;
-                const isSelected = iso === value;
-                const isToday = iso === todayISO;
-                return (
+              {view === "days" && (
+                <>
                   <button
-                    key={iso}
                     type="button"
-                    onClick={() => {
-                      onChange(iso);
-                      setOpen(false);
-                    }}
-                    className={cn(
-                      "flex h-8 w-full items-center justify-center rounded-md text-sm transition-colors",
-                      !inMonth && "text-gray-300",
-                      isSelected ? "bg-brand-500 text-white" : "hover:bg-gray-100",
-                      isToday && !isSelected && "ring-1 ring-inset ring-brand-500"
-                    )}
+                    onClick={prevMonth}
+                    aria-label="Mes anterior"
+                    className="rounded-md p-1 hover:bg-gray-100"
                   >
-                    {day.getUTCDate()}
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+                    </svg>
                   </button>
-                );
-              })}
+                  <button
+                    type="button"
+                    onClick={() => setView("years")}
+                    aria-label="Seleccionar año"
+                    className="rounded-md px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  >
+                    {MONTHS[currentMonth]} {currentYear}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextMonth}
+                    aria-label="Mes siguiente"
+                    className="rounded-md p-1 hover:bg-gray-100"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                    </svg>
+                  </button>
+                </>
+              )}
+
+              {view === "months" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={prevYear}
+                    aria-label="Año anterior"
+                    className="rounded-md p-1 hover:bg-gray-100"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView("years")}
+                    aria-label="Seleccionar año"
+                    className="rounded-md px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  >
+                    {currentYear}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextYear}
+                    aria-label="Año siguiente"
+                    className="rounded-md p-1 hover:bg-gray-100"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                    </svg>
+                  </button>
+                </>
+              )}
+
+              {view === "years" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={prevYears}
+                    aria-label="Años anteriores"
+                    className="rounded-md p-1 hover:bg-gray-100"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
+                  <div className="text-sm font-medium text-gray-700">
+                    {startYear} – {startYear + 11}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={nextYears}
+                    aria-label="Años siguientes"
+                    className="rounded-md p-1 hover:bg-gray-100"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                    </svg>
+                  </button>
+                </>
+              )}
             </div>
+
+            {view === "days" && (
+              <div className="grid grid-cols-7">
+                {DAY_LABELS.map((label) => (
+                  <div key={label} className="py-1 text-center text-xs text-gray-400">
+                    {label}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {view === "days" && (
+              <div className="grid grid-cols-7">
+                {days.map((day) => {
+                  const iso = toISODate(day);
+                  const inMonth = day.getUTCMonth() === currentMonth && day.getUTCFullYear() === currentYear;
+                  const isSelected = iso === value;
+                  const isToday = iso === todayISO;
+                  return (
+                    <button
+                      key={iso}
+                      type="button"
+                      onClick={() => {
+                        onChange(iso);
+                        setOpen(false);
+                      }}
+                      className={cn(
+                        "flex h-8 w-full items-center justify-center rounded-md text-sm transition-colors",
+                        !inMonth && "text-gray-300",
+                        isSelected ? "bg-brand-500 text-white" : "hover:bg-gray-100",
+                        isToday && !isSelected && "ring-1 ring-inset ring-brand-500"
+                      )}
+                    >
+                      {day.getUTCDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {view === "months" && (
+              <div className="grid grid-cols-4 gap-1">
+                {MONTHS_SHORT.map((label, i) => {
+                  const isSelected = i === currentMonth;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => {
+                        setViewDate((d) => new Date(Date.UTC(d.getUTCFullYear(), i, 1)));
+                        setView("days");
+                      }}
+                      className={cn(
+                        "flex h-9 w-full items-center justify-center rounded-md text-sm transition-colors",
+                        isSelected ? "bg-brand-500 text-white" : "hover:bg-gray-100"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {view === "years" && (
+              <div className="grid grid-cols-4 gap-1">
+                {years.map((year) => {
+                  const isSelected = year === currentYear;
+                  return (
+                    <button
+                      key={year}
+                      type="button"
+                      onClick={() => {
+                        setViewDate((d) => new Date(Date.UTC(year, d.getUTCMonth(), 1)));
+                        setView("months");
+                      }}
+                      className={cn(
+                        "flex h-9 w-full items-center justify-center rounded-md text-sm transition-colors",
+                        isSelected ? "bg-brand-500 text-white" : "hover:bg-gray-100"
+                      )}
+                    >
+                      {year}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             <div className="mt-2 border-t border-gray-100 pt-2">
               <button
