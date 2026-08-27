@@ -28,3 +28,6 @@ Thumbs.db
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# Docker (local deployment only)
+Dockerfile
