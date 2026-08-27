@@ -156,12 +156,18 @@ export async function pendingOfflineCount(): Promise<number> {
 
 // ─── Auth helpers ─────────────────────────────────────────────────────────────
 
+export interface CustomerCheckResponse {
+  exists: boolean;
+  acceptedLegal: boolean;
+}
+
 /**
- * Check whether a customer with the given email exists in the database.
+ * Check whether a customer with the given email exists in the database and,
+ * if so, whether they have already accepted the mandatory legal documents
+ * (Terms & Conditions + Privacy Policy).
  * Calls the public endpoint POST /client/check-customer.
- * Returns true if the email belongs to an active customer.
  */
-export async function checkCustomerEmail(email: string): Promise<boolean> {
+export async function checkCustomerEmail(email: string): Promise<CustomerCheckResponse> {
   const res = await fetch(`${API_URL}/client/check-customer`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -174,7 +180,10 @@ export async function checkCustomerEmail(email: string): Promise<boolean> {
   }
 
   const data = await res.json();
-  return data.exists === true;
+  return {
+    exists: data.exists === true,
+    acceptedLegal: data.acceptedLegal === true,
+  };
 }
 
 /**

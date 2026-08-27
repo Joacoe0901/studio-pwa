@@ -18,7 +18,7 @@ import { getCachedBranding } from "@/lib/branding";
 
 const CODE_LENGTH = 6;
 
-type Step = "email" | "options" | "code";
+type Step = "email" | "legal" | "options" | "code";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -54,12 +54,15 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
+  const [needsLegal, setNeedsLegal] = useState(false);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   function goBack() {
     setError("");
-    if (step === "options") {
+    if (step === "legal") {
       setStep("email");
+    } else if (step === "options") {
+      setStep(needsLegal ? "legal" : "email");
     } else if (step === "code") {
       setStep("options");
       setCodeSent(false);
@@ -76,27 +79,37 @@ export default function LoginPage() {
   }
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const canGoNext = isValidEmail && acceptedLegal;
+  const canSubmitEmail = isValidEmail;
+  const canSubmitLegal = acceptedLegal;
 
   // ── Step 1: Email → Validate → Next ────────────────────────────────────────
   async function handleEmailNext(e: React.FormEvent) {
     e.preventDefault();
-    if (!canGoNext) return;
+    if (!canSubmitEmail) return;
     setError("");
     setLoading(true);
 
     try {
-      const exists = await checkCustomerEmail(email);
+      const { exists, acceptedLegal } = await checkCustomerEmail(email);
       if (!exists) {
         setError("Correo no registrado. Contacta con el estudio para registrarte.");
         return;
       }
-      setStep("options");
+      setNeedsLegal(!acceptedLegal);
+      setStep(acceptedLegal ? "options" : "legal");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al verificar el email.");
     } finally {
       setLoading(false);
     }
+  }
+
+  // ── Step 1.5: Legal consent → next ──────────────────────────────────────
+  function handleLegalNext(e: React.FormEvent) {
+    e.preventDefault();
+    if (!canSubmitLegal) return;
+    setError("");
+    setStep("options");
   }
 
   // ── Step 2: Request code by email ────────────────────────────────────────
@@ -179,7 +192,7 @@ export default function LoginPage() {
             />
           </div>
 
-      {/* ─── STEP 1: Email + Terms ─────────────────────────────────────── */}
+      {/* ─── STEP 1: Email ───────────────────────────────────────────────── */}
       {step === "email" && (
         <form onSubmit={handleEmailNext} className="w-full max-w-xs space-y-6">
           <p className="text-center text-gray-600 text-sm">
@@ -205,6 +218,32 @@ export default function LoginPage() {
               transition-colors duration-150"
             aria-label="Correo electrónico"
           />
+
+          {error && (
+            <p role="alert" className="text-sm text-red-600 text-center">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={!canSubmitEmail || loading}
+            className="w-full py-4 rounded-xl text-white font-semibold text-lg
+              bg-brand-500 hover:bg-brand-600 active:bg-brand-700
+              disabled:opacity-40 disabled:cursor-not-allowed
+              transition-colors duration-150"
+          >
+            {loading ? "Verificando..." : "Siguiente"}
+          </button>
+        </form>
+      )}
+
+      {/* ─── STEP 1.5: Legal consent (first time only) ───────────────────── */}
+      {step === "legal" && (
+        <form onSubmit={handleLegalNext} className="w-full max-w-xs space-y-6">
+          <p className="text-center text-gray-600 text-sm">
+            Para continuar, acepta los términos y políticas
+          </p>
 
           {/* Legal checkbox (mandatory: Terms + Privacy) */}
           <label className="flex items-start gap-3 cursor-pointer select-none">
@@ -264,13 +303,22 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={!canGoNext || loading}
+            disabled={!canSubmitLegal || loading}
             className="w-full py-4 rounded-xl text-white font-semibold text-lg
               bg-brand-500 hover:bg-brand-600 active:bg-brand-700
               disabled:opacity-40 disabled:cursor-not-allowed
               transition-colors duration-150"
           >
-            {loading ? "Verificando..." : "Siguiente"}
+            Continuar
+          </button>
+
+          <button
+            type="button"
+            onClick={goBack}
+            className="w-full py-3 text-sm text-gray-400 hover:text-gray-600
+              transition-colors duration-150"
+          >
+            ← Volver
           </button>
         </form>
       )}
@@ -347,7 +395,6 @@ export default function LoginPage() {
               value={code}
               onChange={handleCodeChange}
               disabled={loading}
-              placeholder="AB3X7K"
               className="block w-full text-center text-3xl font-mono font-bold tracking-[0.5em] uppercase
                 border-2 rounded-xl py-4 px-4 outline-none
                 border-gray-300 focus:border-brand-500
