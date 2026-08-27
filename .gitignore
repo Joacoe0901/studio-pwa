@@ -7,6 +7,7 @@ out/
 
 # PWA generated files (created at build time)
 public/workbox-*.js
+public/sw.js
 public/sw.js.map
 public/worker-*.js
 
