@@ -213,6 +213,7 @@ export interface CustomerVoucherResponse {
   fixedDays?: string[];
   totalSessions: number;
   consumed: number;
+  cancelled: number;
   upcoming: number;
   purchaseDate: string;
   expirationDate: string;

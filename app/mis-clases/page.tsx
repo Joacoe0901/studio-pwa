@@ -151,7 +151,7 @@ export default function MisClasesPage() {
                                     </div>
                                     {r.cancelledConsumed ? (
                                         <span className="text-xs font-medium px-2.5 py-1 rounded-full text-amber-600 bg-amber-50 border border-amber-200">
-                                            Cancelada · consumida
+                                            Cancelada sin recuperación
                                         </span>
                                     ) : past ? (
                                         <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${attendanceStyle(r.attended)}`}>
