@@ -107,7 +107,7 @@ function VoucherStats({ consumed, cancelled, upcoming, total, planType, recoveri
 
     const rows: StatRow[] = [
         { label: "Consumidas", value: `${consumed} / ${total}`, color: STATE_COLORS.consumed },
-        { label: "Agendadas", value: `${upcoming} / ${total}`, color: STATE_COLORS.upcoming },
+        { label: "Próximas", value: `${upcoming} / ${total}`, color: STATE_COLORS.upcoming },
         { label: "Canceladas", value: `${cancelled} / ${total}`, color: STATE_COLORS.cancelled },
         { label: "Disponibles", value: `${available} / ${total}`, color: STATE_COLORS.available, bordered: true },
     ];
