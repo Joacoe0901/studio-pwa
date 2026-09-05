@@ -43,6 +43,8 @@ function DonutChart({ consumed, upcoming, cancelled, available, total, totalSche
     const overbooked = totalScheduled > total;
     const extra = Math.max(0, totalScheduled - total);
     const barScale = Math.max(total, totalScheduled);
+    // Totales = consumidas + agendadas + canceladas + disponibles (las recuperables no se suman).
+    const totales = consumed + upcoming + cancelled + available;
     const size = 140;
     const stroke = 16;
     const r = (size - stroke) / 2;
@@ -84,7 +86,7 @@ function DonutChart({ consumed, upcoming, cancelled, available, total, totalSche
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                 <div className={`text-2xl font-bold tabular-nums leading-none ${overbooked ? "text-red-600" : "text-gray-900"}`}>
-                    {totalScheduled}/{total}
+                    {totales}/{total}
                 </div>
                 <div className="text-[11px] text-gray-500 mt-1">Clases Totales</div>
                 {overbooked && (
