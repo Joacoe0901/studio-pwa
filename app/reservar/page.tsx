@@ -208,6 +208,11 @@ export default function ReservarPage() {
           session,
           message: "No puede reservar esta clase, no tiene un bono activo.",
         });
+      } else if (code === "SESSION_TOO_FAR_AHEAD") {
+        setErrorModal({
+          session,
+          message: "Solo puedes reservar clases dentro de los próximos 7 días.",
+        });
       } else {
         setErrorModal({
           session,
