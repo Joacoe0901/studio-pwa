@@ -43,9 +43,9 @@ function attendanceLabel(attended: boolean | null): string {
 }
 
 function attendanceStyle(attended: boolean | null): string {
-    if (attended === true) return "text-green-600 bg-green-50 border border-green-200";
-    if (attended === false) return "text-red-500 bg-red-50 border border-red-200";
-    return "text-gray-400 bg-gray-100 border border-gray-200";
+    if (attended === true) return "bg-green-600 text-white font-medium px-5 py-2 rounded-xl shadow-sm";
+    if (attended === false) return "text-red-600 font-medium px-4 py-2 rounded-xl border border-red-200 bg-red-50";
+    return "text-gray-500 font-medium px-4 py-2 rounded-xl border border-gray-200 bg-gray-50";
 }
 
 function cancelTone(outcome: string): "danger" | "warning" | "info" {
@@ -150,11 +150,13 @@ export default function MisClasesPage() {
                                         <p className="text-xs text-gray-400 mt-1 capitalize">{r.enrollmentType === "FIXED" ? "Fija" : "Ocasional"}</p>
                                     </div>
                                     {r.cancelledConsumed ? (
-                                        <span className="text-xs font-medium px-2.5 py-1 rounded-full text-amber-600 bg-amber-50 border border-amber-200">
-                                            Cancelada sin recuperación
+                                        <span className="bg-amber-500 text-white font-medium text-xs px-2 py-1 rounded-lg shadow-sm text-center shrink-0 leading-tight">
+                                            Cancelada sin
+                                            <br />
+                                            recuperación
                                         </span>
                                     ) : past ? (
-                                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${attendanceStyle(r.attended)}`}>
+                                        <span className={attendanceStyle(r.attended)}>
                                             {attendanceLabel(r.attended)}
                                         </span>
                                     ) : (
