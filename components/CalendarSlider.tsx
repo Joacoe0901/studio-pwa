@@ -28,19 +28,35 @@ const WEEKDAY_NAMES: Record<number, string> = {
   4: "J", 5: "V", 6: "S",
 };
 
+/** Fecha de inicio de la ventana del calendario.
+ *  - Hoy si es lunes-viernes.
+ *  - Lunes siguiente si hoy es sábado o domingo.
+ *  Siempre a las 00:00 en hora local. */
+export function calendarWindowStart(referenceDate?: Date): Date {
+  const start = referenceDate ? new Date(referenceDate) : new Date();
+  start.setHours(0, 0, 0, 0);
+  const dow = start.getDay(); // 0=Dom, 6=Sáb
+  if (dow === 6) start.setDate(start.getDate() + 2);      // Sáb → lunes siguiente
+  else if (dow === 0) start.setDate(start.getDate() + 1); // Dom → lunes siguiente
+  return start;
+}
+
+/** Formatea un Date como YYYY-MM-DD en hora local. */
+export function toDateStr(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 /** Genera los días del calendario según calendarDays (MON_SUN, MON_SAT, MON_FRI).
- *  Devuelve 2 semanas desde el lunes de la semana actual. */
+ *  Devuelve 2 semanas (14 días) desde hoy, o desde el lunes siguiente si hoy es
+ *  sábado/domingo, mostrando solo los días activos. Los días pasados no aparecen. */
 export function generateCalendarDays(
   calendarDays?: string,
   referenceDate?: Date
 ): CalendarDay[] {
-  const now = referenceDate ?? new Date();
-  // Ir al lunes de esta semana (lunes = 1)
-  const dayOfWeek = now.getDay(); // 0=Domingo
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + mondayOffset);
-  monday.setHours(0, 0, 0, 0);
+  const start = calendarWindowStart(referenceDate);
 
   // Determinar días activos
   let activeWeekdays: number[];
@@ -60,10 +76,10 @@ export function generateCalendarDays(
   const days: CalendarDay[] = [];
   let lastMonth = -1;
 
-  // Generar 14 días desde el lunes
+  // Generar 14 días desde el inicio de la ventana
   for (let i = 0; i < 14; i++) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
 
     const dow = d.getDay(); // 0-6
     if (!activeWeekdays.includes(dow)) continue;
@@ -72,12 +88,8 @@ export function generateCalendarDays(
     const isFirstOfMonth = month !== lastMonth;
     lastMonth = month;
 
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-
     days.push({
-      date: `${yyyy}-${mm}-${dd}`,
+      date: toDateStr(d),
       number: d.getDate(),
       weekday: WEEKDAY_NAMES[dow],
       month: MONTH_NAMES[month],
@@ -90,11 +102,7 @@ export function generateCalendarDays(
 
 /** Obtiene la fecha de hoy en YYYY-MM-DD */
 export function todayStr(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return toDateStr(new Date());
 }
 
 export default function CalendarSlider({

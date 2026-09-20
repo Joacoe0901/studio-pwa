@@ -6,7 +6,8 @@ import { apiFetch, getAccessToken } from "@/lib/api";
 import { setCachedBranding } from "@/lib/branding";
 import CalendarSlider, {
   generateCalendarDays,
-  todayStr,
+  calendarWindowStart,
+  toDateStr,
   type CalendarDay,
 } from "@/components/CalendarSlider";
 import ClassCard from "@/components/ClassCard";
@@ -78,7 +79,7 @@ export default function ReservarPage() {
   const [primaryColor, setPrimaryColor] = useState("#53593D");
   const [sessions, setSessions] = useState<ClientBookableSession[]>([]);
   const [days, setDays] = useState<CalendarDay[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(todayStr());
+  const [selectedDate, setSelectedDate] = useState<string>(() => toDateStr(calendarWindowStart()));
   const [loading, setLoading] = useState(true);
   const [reserving, setReserving] = useState<number | null>(null);
   const [cancelling, setCancelling] = useState<number | null>(null);
@@ -128,16 +129,11 @@ export default function ReservarPage() {
     loadBranding();
   }, []);
 
-  /* Load sessions — from the Monday of the current week so past days are included */
+  /* Load sessions — from today (or next Monday on weekends) so past days are excluded */
   const loadSessions = useCallback(async () => {
     try {
-      // Compute Monday of this week as the earliest visible day in the slider
-      const now = new Date();
-      const dow = now.getDay(); // 0=Sun
-      const mondayOffset = dow === 0 ? -6 : 1 - dow;
-      const monday = new Date(now);
-      monday.setDate(now.getDate() + mondayOffset);
-      const from = monday.toISOString().slice(0, 10);
+      // Earliest visible day in the slider: today, or next Monday if weekend
+      const from = toDateStr(calendarWindowStart());
       const to = addDays(from, 14);
       const data = await apiFetch<ClientBookableSession[]>(`/client/sessions?from=${from}&to=${to}`);
       setSessions(data);
