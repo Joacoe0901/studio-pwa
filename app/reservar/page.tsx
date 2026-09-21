@@ -7,6 +7,7 @@ import { setCachedBranding } from "@/lib/branding";
 import CalendarSlider, {
   generateCalendarDays,
   calendarWindowStart,
+  bookingWindowEnd,
   toDateStr,
   type CalendarDay,
 } from "@/components/CalendarSlider";
@@ -54,15 +55,6 @@ function isOutsideBookingWindow(startDateTime: string): boolean {
   maxDate.setDate(maxDate.getDate() + 7);
   maxDate.setHours(23, 59, 59, 999);
   return new Date(startDateTime).getTime() > maxDate.getTime();
-}
-
-function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + days);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
 }
 
 function cancelTone(outcome: string): "danger" | "warning" | "info" {
@@ -134,7 +126,7 @@ export default function ReservarPage() {
     try {
       // Earliest visible day in the slider: today, or next Monday if weekend
       const from = toDateStr(calendarWindowStart());
-      const to = addDays(from, 14);
+      const to = toDateStr(bookingWindowEnd());
       const data = await apiFetch<ClientBookableSession[]>(`/client/sessions?from=${from}&to=${to}`);
       setSessions(data);
       // Also load holidays for the same date range.

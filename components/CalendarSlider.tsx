@@ -49,14 +49,25 @@ export function toDateStr(d: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+/** Último día reservable: hoy + 7 días calendario (a las 00:00 local).
+ *  Coincide con la ventana de reserva del backend (hoy 23:59:59 Madrid + 7 días). */
+export function bookingWindowEnd(referenceDate?: Date): Date {
+  const end = referenceDate ? new Date(referenceDate) : new Date();
+  end.setHours(0, 0, 0, 0);
+  end.setDate(end.getDate() + 7);
+  return end;
+}
+
 /** Genera los días del calendario según calendarDays (MON_SUN, MON_SAT, MON_FRI).
- *  Devuelve 2 semanas (14 días) desde hoy, o desde el lunes siguiente si hoy es
- *  sábado/domingo, mostrando solo los días activos. Los días pasados no aparecen. */
+ *  Muestra solo los días con clase dentro de la ventana de reserva (hoy + 7 días),
+ *  empezando hoy, o el lunes siguiente si hoy es sábado/domingo. Los días pasados
+ *  y los que caen fuera de la ventana no aparecen. */
 export function generateCalendarDays(
   calendarDays?: string,
   referenceDate?: Date
 ): CalendarDay[] {
   const start = calendarWindowStart(referenceDate);
+  const end = bookingWindowEnd(referenceDate);
 
   // Determinar días activos
   let activeWeekdays: number[];
@@ -75,26 +86,26 @@ export function generateCalendarDays(
 
   const days: CalendarDay[] = [];
   let lastMonth = -1;
+  const endStr = toDateStr(end);
 
-  // Generar 14 días desde el inicio de la ventana
-  for (let i = 0; i < 14; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
+  // Recorrer desde el inicio de la ventana hasta hoy + 7 días (inclusive)
+  const cursor = new Date(start);
+  while (toDateStr(cursor) <= endStr) {
+    const dow = cursor.getDay(); // 0-6
+    if (activeWeekdays.includes(dow)) {
+      const month = cursor.getMonth();
+      const isFirstOfMonth = month !== lastMonth;
+      lastMonth = month;
 
-    const dow = d.getDay(); // 0-6
-    if (!activeWeekdays.includes(dow)) continue;
-
-    const month = d.getMonth();
-    const isFirstOfMonth = month !== lastMonth;
-    lastMonth = month;
-
-    days.push({
-      date: toDateStr(d),
-      number: d.getDate(),
-      weekday: WEEKDAY_NAMES[dow],
-      month: MONTH_NAMES[month],
-      isFirstOfMonth,
-    });
+      days.push({
+        date: toDateStr(cursor),
+        number: cursor.getDate(),
+        weekday: WEEKDAY_NAMES[dow],
+        month: MONTH_NAMES[month],
+        isFirstOfMonth,
+      });
+    }
+    cursor.setDate(cursor.getDate() + 1);
   }
 
   return days;
