@@ -1,3 +1,10 @@
+import type {
+  CheckoutResponse,
+  CustomerVoucherResponse,
+  PurchasableVoucher,
+  PurchaseOrderResponse,
+} from "@/lib/types";
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
 
 /** Derive backend base URL from API_URL (strip /api/v1 suffix). */
@@ -397,4 +404,58 @@ export async function apiFetch<T = unknown>(
     // GET requests can't be queued — throw offline error.
     throw new OfflineError();
   }
+}
+
+// ─── Online payments (Stripe) ──────────────────────────────────────────────
+
+/**
+ * List the vouchers currently sellable online via Stripe Checkout
+ * (CREDITS templates with an online price and a Stripe price ID configured).
+ * Calls GET /client/payments/vouchers.
+ */
+export async function fetchPurchasableVouchers(): Promise<PurchasableVoucher[]> {
+  return apiFetch<PurchasableVoucher[]>("/client/payments/vouchers", { method: "GET" });
+}
+
+/**
+ * Return the customer's MONTHLY vouchers that are assigned by the teacher but
+ * still unpaid (awaiting online payment). These are surfaced separately from
+ * the catalog so the customer can settle a pre-assigned monthly plan.
+ *
+ * The backend has no dedicated endpoint for this, so it reuses the general
+ * customer voucher list (GET /client/vouchers) and filters client-side.
+ */
+export async function fetchAssignedMonthlyVouchers(): Promise<CustomerVoucherResponse[]> {
+  const vouchers = await apiFetch<CustomerVoucherResponse[]>("/client/vouchers", { method: "GET" });
+  return vouchers.filter((v) => v.planType === "MONTHLY" && !v.paid);
+}
+
+/**
+ * Create a Stripe Checkout session for the given voucher.
+ * For CREDITS only `voucherId` is required. For a pre-assigned MONTHLY voucher,
+ * pass `customerVoucherId` (the customer_voucher assignment id).
+ * Calls POST /client/payments/checkout.
+ */
+export async function createCheckout(
+  voucherId: number,
+  customerVoucherId?: number,
+  redirects?: { successUrl?: string; cancelUrl?: string }
+): Promise<CheckoutResponse> {
+  return apiFetch<CheckoutResponse>("/client/payments/checkout", {
+    method: "POST",
+    body: JSON.stringify({
+      voucherId,
+      ...(customerVoucherId != null ? { customerVoucherId } : {}),
+      ...(redirects?.successUrl ? { successUrl: redirects.successUrl } : {}),
+      ...(redirects?.cancelUrl ? { cancelUrl: redirects.cancelUrl } : {}),
+    }),
+  });
+}
+
+/**
+ * Fetch the current status of a payment order owned by the customer.
+ * Calls GET /client/payments/orders/:id.
+ */
+export async function fetchOrderStatus(orderId: number): Promise<PurchaseOrderResponse> {
+  return apiFetch<PurchaseOrderResponse>(`/client/payments/orders/${orderId}`, { method: "GET" });
 }

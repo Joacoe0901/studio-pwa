@@ -245,9 +245,18 @@ export default function BonosPage() {
                 {loading ? (
                     <p className="text-gray-400 text-sm">Cargando bonos...</p>
                 ) : visibleVouchers.length === 0 ? (
-                    <p className="text-gray-400 text-sm">
-                        {filter === "ACTIVE" ? "No tienes bonos activos." : "No tienes bonos."}
-                    </p>
+                    <div className="space-y-3">
+                        <p className="text-gray-400 text-sm">
+                            {filter === "ACTIVE" ? "No tienes bonos activos." : "No tienes bonos."}
+                        </p>
+                        <button
+                            onClick={() => router.push("/comprar")}
+                            className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-colors"
+                            style={{ backgroundColor: primaryColor }}
+                        >
+                            Comprar bonos
+                        </button>
+                    </div>
                 ) : (
                     visibleVouchers.map((v) => {
                         const open = !!openStats[v.id];

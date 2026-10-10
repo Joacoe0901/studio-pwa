@@ -289,6 +289,51 @@ export interface UpdateCustomerVoucherPayload {
   paymentId?: number | null; // Payment link from finance
 }
 
+// ─── Online payments (Stripe) ─────────────────────────────────────────────────
+
+export type PurchaseOrderStatus =
+  | "PENDING"
+  | "COMPLETED"
+  | "UNRECONCILED"
+  | "FAILED"
+  | "EXPIRED"
+  | "CANCELLED";
+
+/** Voucher sellable online via Stripe Checkout (GET /client/payments/vouchers). */
+export interface PurchasableVoucher {
+  id: number;
+  name: string;
+  planType: VoucherPlanType;
+  priceCents: number;
+  currency: string;
+  totalCredits?: number | null;
+  sessionsPerWeek?: number | null;
+}
+
+/** Response of creating a Stripe Checkout session. */
+export interface CheckoutResponse {
+  paymentOrderId: number;
+  sessionId: string;
+  checkoutUrl: string;
+}
+
+/** Public representation of a payment order (GET /client/payments/orders/:id). */
+export interface PurchaseOrderResponse {
+  id: number;
+  customerId: number;
+  voucherId: number;
+  customerVoucherId?: number | null;
+  amount: number; // cents
+  currency: string;
+  planType: VoucherPlanType;
+  creditsSessions?: number | null;
+  status: PurchaseOrderStatus;
+  provider: string;
+  sessionId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── Finance domain types ─────────────────────────────────────────────────────
 
 export type PaymentMethod = "CASH" | "CARD" | "TRANSFER" | "BIZUM";
