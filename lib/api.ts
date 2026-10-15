@@ -439,7 +439,8 @@ export async function fetchAssignedMonthlyVouchers(): Promise<CustomerVoucherRes
 export async function createCheckout(
   voucherId: number,
   customerVoucherId?: number,
-  redirects?: { successUrl?: string; cancelUrl?: string }
+  redirects?: { successUrl?: string; cancelUrl?: string },
+  opts?: { recurring?: boolean }
 ): Promise<CheckoutResponse> {
   return apiFetch<CheckoutResponse>("/client/payments/checkout", {
     method: "POST",
@@ -448,6 +449,7 @@ export async function createCheckout(
       ...(customerVoucherId != null ? { customerVoucherId } : {}),
       ...(redirects?.successUrl ? { successUrl: redirects.successUrl } : {}),
       ...(redirects?.cancelUrl ? { cancelUrl: redirects.cancelUrl } : {}),
+      ...(opts?.recurring ? { recurring: true } : {}),
     }),
   });
 }

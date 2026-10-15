@@ -72,10 +72,17 @@ export default function ComprarBonosPage() {
     setError(null);
     try {
       const origin = window.location.origin;
-      const checkout = await createCheckout(voucherId, customerVoucherId, {
-        successUrl: `${origin}/comprar/resultado`,
-        cancelUrl: `${origin}/comprar`,
-      });
+      const checkout = await createCheckout(
+        voucherId,
+        customerVoucherId,
+        {
+          successUrl: `${origin}/comprar/resultado`,
+          cancelUrl: `${origin}/comprar`,
+        },
+        // A pre-assigned MONTHLY voucher is a recurring subscription (Bloque K):
+        // the first month is charged up-front and future months via invoice.paid.
+        { recurring: customerVoucherId != null }
+      );
       window.location.assign(checkout.checkoutUrl);
     } catch (err) {
       setError(friendlyError(err));
