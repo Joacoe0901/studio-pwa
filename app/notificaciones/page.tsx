@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, getAccessToken } from "@/lib/api";
+import AppHeader from "@/components/AppHeader";
 
 interface Notification {
     id: number;
@@ -42,14 +43,7 @@ export default function NotificacionesPage() {
 
     return (
         <div className="h-dvh bg-white flex flex-col overflow-hidden">
-            <header className="flex-shrink-0 px-4 pt-safe-top pb-3 flex items-center gap-3" style={{ backgroundColor: primaryColor }}>
-                <button onClick={() => router.back()} className="p-1 text-white/80 hover:text-white transition-colors">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                    </svg>
-                </button>
-                <h1 className="text-lg font-bold text-white">Notificaciones</h1>
-            </header>
+            <AppHeader title="Notificaciones" primaryColor={primaryColor} />
             <main className="flex-1 min-h-0 px-6 pb-10 space-y-3 overflow-y-auto">
                 {loading ? (
                     <p className="text-gray-400 text-sm">Cargando...</p>

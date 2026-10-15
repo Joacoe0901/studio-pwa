@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchOrderStatus, getAccessToken } from "@/lib/api";
 import type { PurchaseOrderResponse, PurchaseOrderStatus } from "@/lib/types";
+import AppHeader from "@/components/AppHeader";
 
 const TERMINAL: PurchaseOrderStatus[] = ["COMPLETED", "FAILED", "EXPIRED", "CANCELLED"];
 
@@ -48,9 +49,7 @@ function ResultadoInner() {
 
   return (
     <div className="h-dvh bg-white flex flex-col overflow-hidden">
-      <header className="flex-shrink-0 px-4 pt-safe-top pb-3 flex items-center gap-3" style={{ backgroundColor: "#53593D" }}>
-        <h1 className="text-lg font-bold text-white">Estado del pago</h1>
-      </header>
+      <AppHeader title="Estado del pago" primaryColor="#53593D" showBack={false} />
 
       <main className="flex-1 min-h-0 px-6 pt-8 pb-10 flex flex-col items-center justify-center text-center space-y-4">
         {status === "COMPLETED" ? (
