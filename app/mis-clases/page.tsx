@@ -21,21 +21,6 @@ function isPast(endDateTime: string): boolean {
     return new Date(endDateTime).getTime() < Date.now();
 }
 
-function currentAndNextMonthRange(): { from: string; to: string } {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, "0");
-    // Last day of next month — JS Date handles year rollover automatically (e.g. Dec → Jan)
-    const nextMonth = new Date(yyyy, now.getMonth() + 2, 0);
-    const nextYYYY = nextMonth.getFullYear();
-    const nextMM = String(nextMonth.getMonth() + 1).padStart(2, "0");
-    const nextLastDay = nextMonth.getDate();
-    return {
-        from: `${yyyy}-${mm}-01`,
-        to: `${nextYYYY}-${nextMM}-${String(nextLastDay).padStart(2, "0")}`,
-    };
-}
-
 function attendanceLabel(attended: boolean | null): string {
     if (attended === true) return "Asistió";
     if (attended === false) return "No asistió";
@@ -62,6 +47,7 @@ export default function MisClasesPage() {
     const [primaryColor, setPrimaryColor] = useState("#53593D");
     const [confirmCancel, setConfirmCancel] = useState<Reservation | null>(null);
     const [cancelPreview, setCancelPreview] = useState<{ message: string; tone: "danger" | "warning" | "info" } | null>(null);
+    const [filter, setFilter] = useState<"UPCOMING" | "ALL">("UPCOMING");
 
     useEffect(() => {
         apiFetch<{ primaryColor: string }>("/client/company")
@@ -82,13 +68,19 @@ export default function MisClasesPage() {
         load();
     }, [router]);
 
-    /* Filter: current + next month, sorted nearest → farthest */
+    /* Filter + order.
+       "UPCOMING" (default): only classes that have not ended yet (ongoing ones included),
+       sorted from today onwards. "ALL": every class — past and future — sorted from the
+       oldest to the farthest in the future. */
     const reservations = useMemo(() => {
-        const { from, to } = currentAndNextMonthRange();
-        return allReservations
-            .filter((r) => r.startDateTime >= from && r.startDateTime <= to + "T23:59:59")
-            .sort((a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime());
-    }, [allReservations]);
+        const sorted = [...allReservations].sort(
+            (a, b) => new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime(),
+        );
+        if (filter === "UPCOMING") {
+            return sorted.filter((r) => !isPast(r.endDateTime));
+        }
+        return sorted;
+    }, [allReservations, filter]);
 
     const handleCancelClick = async (r: Reservation) => {
         setConfirmCancel(r);
@@ -131,10 +123,36 @@ export default function MisClasesPage() {
                 <h1 className="text-lg font-bold text-white">Mis Clases</h1>
             </header>
             <main className="flex-1 min-h-0 px-6 pt-4 pb-10 space-y-3 overflow-y-auto">
+                {/* Filtro Próximas / Todas */}
+                <div className="flex gap-2">
+                    {([
+                        { value: "UPCOMING", label: "Próximas" },
+                        { value: "ALL", label: "Todas" },
+                    ] as const).map((option) => {
+                        const isActive = filter === option.value;
+                        return (
+                            <button
+                                key={option.value}
+                                onClick={() => setFilter(option.value)}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
+                                    isActive
+                                        ? "text-white border-transparent"
+                                        : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50"
+                                }`}
+                                style={isActive ? { backgroundColor: primaryColor } : undefined}
+                            >
+                                {option.label}
+                            </button>
+                        );
+                    })}
+                </div>
+
                 {loading ? (
                     <p className="text-gray-400 text-sm">Cargando...</p>
                 ) : reservations.length === 0 ? (
-                    <p className="text-gray-400 text-sm">No tienes clases reservadas.</p>
+                    <p className="text-gray-400 text-sm">
+                        {filter === "UPCOMING" ? "No tienes clases próximas." : "No tienes clases."}
+                    </p>
                 ) : (
                     reservations.map((r) => {
                         const past = isPast(r.endDateTime);
